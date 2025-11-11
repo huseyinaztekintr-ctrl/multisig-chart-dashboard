@@ -7,6 +7,7 @@ import { getTokenBalance } from '@/utils/blockchain';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { getEnabledTokens, MultisigToken } from './TokenManager';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MULTISIG_ADDRESS = '0xB799CD1f2ED5dB96ea94EdF367fBA2d90dfd9634';
 
@@ -96,6 +97,7 @@ const getTokenColor = (symbol: string, index: number = 0): string => {
 };
 
 export const MultisigHistoryChart = () => {
+  const isMobile = useIsMobile();
   const [rawHistory, setRawHistory] = useState<PriceSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTokens, setActiveTokens] = useState<MultisigToken[]>([]);
@@ -565,9 +567,9 @@ export const MultisigHistoryChart = () => {
           </button>
         </div>
         
-        {/* Chart Type ve Volume Controls */}
-        <div className="flex gap-2 flex-wrap items-center border-t border-border/30 pt-2 mt-2">
-          <span className="text-xs text-muted-foreground mr-1">Grafik Tipi:</span>
+        {/* Chart Type ve Volume Controls - Mobile Optimized */}
+        <div className={`flex gap-2 flex-wrap items-center border-t border-border/30 pt-2 mt-2 ${isMobile ? 'justify-center' : ''}`}>
+          {!isMobile && <span className="text-xs text-muted-foreground mr-1">Grafik Tipi:</span>}
           <button
             onClick={() => setChartType('line')}
             className={`px-2 py-1 rounded text-xs font-medium transition-all flex items-center gap-1 ${
@@ -577,7 +579,7 @@ export const MultisigHistoryChart = () => {
             }`}
           >
             <TrendingUp className="w-3 h-3" />
-            Çizgi
+            {isMobile ? '' : 'Çizgi'}
           </button>
           <button
             onClick={() => setChartType('area')}
@@ -588,25 +590,26 @@ export const MultisigHistoryChart = () => {
             }`}
           >
             <BarChart3 className="w-3 h-3" />
-            Alan
+            {isMobile ? '' : 'Alan'}
           </button>
           
           <div className="h-4 w-px bg-border mx-1"></div>
           
           <button
             onClick={() => setShowVolume(!showVolume)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+            className={`px-2 py-1 rounded text-xs font-medium transition-all flex items-center gap-1 ${
               showVolume
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            Hacim {showVolume ? '✓' : ''}
+            <Database className="w-3 h-3" />
+            {isMobile ? (showVolume ? '✓' : '') : `Hacim ${showVolume ? '✓' : ''}`}
           </button>
         </div>
       </div>
       
-      <ResponsiveContainer width="100%" height={isFullscreen ? 600 : 400}>
+      <ResponsiveContainer width="100%" height={isFullscreen ? 600 : (isMobile ? 280 : 400)}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
           <XAxis 
@@ -844,24 +847,26 @@ export const MultisigHistoryChart = () => {
 
   return (
     <>
-      <Card className="p-5 gradient-card border-corporate-blue/30 glow-blue relative overflow-visible">
+      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative overflow-visible ${isMobile ? 'mx-2' : ''}`}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-corporate-blue" />
             <div>
-              <h3 className="text-lg font-bold text-foreground">Multisig Toplam - Geçmiş</h3>
+              <h3 className={`font-bold text-foreground ${isMobile ? 'text-base' : 'text-lg'}`}>Multisig Toplam - Geçmiş</h3>
               <p className="text-xs text-muted-foreground">{rawHistory.length} veri noktası</p>
             </div>
           </div>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsFullscreen(true)}
-            className="hover:bg-accent"
-          >
-            <Maximize2 className="w-5 h-5" />
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullscreen(true)}
+              className="hover:bg-accent"
+            >
+              <Maximize2 className="w-5 h-5" />
+            </Button>
+          )}
         </div>
         
         {renderChartContent()}

@@ -141,9 +141,18 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Dashboard Grid - No Scroll */}
+      {/* Main Dashboard Grid - Mobile First Responsive */}
       <main className="flex-1 lg:overflow-hidden p-4">
-        <div className="lg:h-full grid grid-cols-12 gap-4">
+        <div className="lg:h-full flex flex-col lg:grid lg:grid-cols-12 gap-4">
+          {/* Mobile Layout: Stack all columns vertically */}
+          
+          {/* Chart Section - Mobile Priority */}
+          <div className="lg:hidden w-full mb-6">
+            <div className="h-[300px]">
+              <MultisigHistoryChart />
+            </div>
+          </div>
+
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto">
             {/* Wallet Manager */}
@@ -174,8 +183,8 @@ const Index = () => {
             <PositionNotes />
             <DebtBalance />
             
-            {/* Multisig History Chart - Compact */}
-            <div className="max-h-[280px] mb-6">
+            {/* Multisig History Chart - Desktop Only */}
+            <div className="hidden lg:block max-h-[280px] mb-6">
               <MultisigHistoryChart />
             </div>
           </div>
