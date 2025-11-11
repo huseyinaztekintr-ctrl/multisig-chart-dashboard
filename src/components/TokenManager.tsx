@@ -149,10 +149,70 @@ export const TokenManager = () => {
   
   // Search states
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{symbol: string; name: string; address: string; logo: string; pairAddress: string}[]>([]);
+  const [searchResults, setSearchResults] = useState<{
+    symbol: string; 
+    name: string; 
+    address: string; 
+    logo: string; 
+    pairAddress: string;
+    fdv: number;
+    marketCap: number;
+    liquidity: number;
+    volume24h: number;
+    priceUsd: number;
+    priceChange24h: number;
+    score: number;
+  }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Search function
+  // Fuzzy search function for better matching
+  const fuzzyMatch = (query: string, target: string): number => {
+    if (!query || !target) return 0;
+    
+    const queryLower = query.toLowerCase();
+    const targetLower = target.toLowerCase();
+    
+    // Exact match gets highest score
+    if (targetLower === queryLower) return 100;
+    
+    // Starts with query gets high score
+    if (targetLower.startsWith(queryLower)) return 90;
+    
+    // Contains query gets medium score
+    if (targetLower.includes(queryLower)) return 70;
+    
+    // Character by character fuzzy matching
+    let score = 0;
+    let queryIndex = 0;
+    
+    for (let i = 0; i < targetLower.length && queryIndex < queryLower.length; i++) {
+      if (targetLower[i] === queryLower[queryIndex]) {
+        score += 50 / queryLower.length; // Distribute points across query length
+        queryIndex++;
+      }
+    }
+    
+    // Bonus for consecutive matches
+    let consecutive = 0;
+    let maxConsecutive = 0;
+    queryIndex = 0;
+    
+    for (let i = 0; i < targetLower.length && queryIndex < queryLower.length; i++) {
+      if (targetLower[i] === queryLower[queryIndex]) {
+        consecutive++;
+        maxConsecutive = Math.max(maxConsecutive, consecutive);
+        queryIndex++;
+      } else {
+        consecutive = 0;
+      }
+    }
+    
+    score += (maxConsecutive / queryLower.length) * 20;
+    
+    return Math.min(score, 99); // Cap at 99 to keep exact matches highest
+  };
+
+  // Enhanced search function with fuzzy matching and liquidity data
   const searchTokens = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -161,19 +221,46 @@ export const TokenManager = () => {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`https://api.dexscreener.com/latest/dex/search/?q=${encodeURIComponent(query)}`);
-      const data = await response.json();
+      // Search both DexScreener and a fallback for better coverage
+      const [dexResponse] = await Promise.all([
+        fetch(`https://api.dexscreener.com/latest/dex/search/?q=${encodeURIComponent(query)}`)
+      ]);
       
-      if (data.pairs && data.pairs.length > 0) {
-        const avalanchePairs = data.pairs.filter((pair: any) => pair.chainId === 'avalanche');
-        const results = avalanchePairs.slice(0, 10).map((pair: any) => ({
-          symbol: pair.baseToken?.symbol || '',
-          name: pair.baseToken?.name || '',
-          address: pair.baseToken?.address || '',
-          logo: `https://dd.dexscreener.com/ds-data/tokens/avalanche/${pair.baseToken?.address}.png`,
-          pairAddress: pair.pairAddress || ''
-        }));
-        setSearchResults(results);
+      const dexData = await dexResponse.json();
+      
+      if (dexData.pairs && dexData.pairs.length > 0) {
+        // Filter for Avalanche pairs and add fuzzy matching scores
+        const avalanchePairs = dexData.pairs
+          .filter((pair: any) => pair.chainId === 'avalanche')
+          .map((pair: any) => {
+            const symbolScore = fuzzyMatch(query, pair.baseToken?.symbol || '');
+            const nameScore = fuzzyMatch(query, pair.baseToken?.name || '');
+            const maxScore = Math.max(symbolScore, nameScore);
+            
+            return {
+              symbol: pair.baseToken?.symbol || '',
+              name: pair.baseToken?.name || '',
+              address: pair.baseToken?.address || '',
+              logo: `https://dd.dexscreener.com/ds-data/tokens/avalanche/${pair.baseToken?.address}.png`,
+              pairAddress: pair.pairAddress || '',
+              fdv: pair.fdv || 0,
+              marketCap: pair.marketCap || 0,
+              liquidity: pair.liquidity?.usd || 0,
+              volume24h: pair.volume?.h24 || 0,
+              priceUsd: parseFloat(pair.priceUsd) || 0,
+              priceChange24h: pair.priceChange?.h24 || 0,
+              score: maxScore
+            };
+          })
+          .filter((token: any) => token.score > 0) // Only show tokens with some match
+          .sort((a: any, b: any) => {
+            // Sort by score first, then by liquidity for ties
+            if (b.score !== a.score) return b.score - a.score;
+            return b.liquidity - a.liquidity;
+          })
+          .slice(0, 15); // Show top 15 results
+
+        setSearchResults(avalanchePairs);
       } else {
         setSearchResults([]);
       }
@@ -187,7 +274,7 @@ export const TokenManager = () => {
   };
 
   // Add token from search results
-  const addTokenFromSearch = (searchToken: any) => {
+  const addTokenFromSearch = (searchToken: typeof searchResults[0]) => {
     const newToken: MultisigToken = {
       id: Date.now().toString(),
       symbol: searchToken.symbol,
@@ -322,40 +409,146 @@ export const TokenManager = () => {
         <div className="mt-4 space-y-3">
           {/* Token Search */}
           <div className="p-3 border border-border rounded-lg bg-muted/20">
-            <h4 className="text-sm font-medium mb-2">Token Ara & Ekle</h4>
+            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+              🔍 Fuzzy Token Ara & Ekle
+              <span className="text-xs bg-order-green/20 text-order-green px-2 py-0.5 rounded-full">Smart Search</span>
+            </h4>
             <div className="space-y-2">
               <Input
-                placeholder="Token ara (örn: ARENA, ORDER, BTC.b)"
+                placeholder="1 harf bile yeter! (w → WETH, a → AVAX, u → USDC)"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  if (e.target.value.length >= 2) {
+                  if (e.target.value.length >= 1) { // 1 harf yeter!
                     searchTokens(e.target.value);
                   } else {
                     setSearchResults([]);
                   }
                 }}
-                className="text-sm"
+                className="text-sm border-order-green/30 focus:border-order-green"
               />
               {isSearching && (
-                <p className="text-xs text-muted-foreground">Aranıyor...</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-3 h-3 border-2 border-order-green/30 border-t-order-green rounded-full animate-spin" />
+                  Avalanche ağında akıllı arama yapılıyor...
+                </div>
               )}
               {searchResults.length > 0 && (
-                <div className="max-h-48 overflow-y-auto space-y-1 border border-border rounded p-2">
+                <div className="max-h-96 overflow-y-auto space-y-1 border border-border rounded p-2 bg-background/50">
                   {searchResults.map((result, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
+                      className="flex items-center gap-3 p-3 hover:bg-order-green/5 rounded cursor-pointer border border-transparent hover:border-order-green/30 transition-all group"
                       onClick={() => addTokenFromSearch(result)}
                     >
-                      <img src={result.logo} alt={result.symbol} className="w-5 h-5 rounded-full" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{result.symbol}</p>
-                        <p className="text-xs text-muted-foreground truncate">{result.name}</p>
+                      <div className="relative">
+                        <img 
+                          src={result.logo} 
+                          alt={result.symbol} 
+                          className="w-8 h-8 rounded-full border-2 border-order-green/20 group-hover:border-order-green/50 transition-all" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32x32/3D8D5D/ffffff?text=' + result.symbol.charAt(0);
+                          }}
+                        />
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-order-green rounded-full flex items-center justify-center">
+                          <Plus className="w-2 h-2 text-white" />
+                        </div>
                       </div>
-                      <Plus className="w-4 h-4 text-corporate-blue" />
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-bold text-foreground">{result.symbol}</p>
+                          <div className="flex items-center gap-1">
+                            {result.score >= 90 && <span className="text-xs bg-green-500/20 text-green-600 px-1.5 py-0.5 rounded">Tam Eşleşme</span>}
+                            {result.score >= 70 && result.score < 90 && <span className="text-xs bg-blue-500/20 text-blue-600 px-1.5 py-0.5 rounded">Yakın</span>}
+                            {result.score > 0 && result.score < 70 && <span className="text-xs bg-yellow-500/20 text-yellow-600 px-1.5 py-0.5 rounded">Benzer</span>}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mb-1">{result.name}</p>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="space-y-0.5">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Fiyat:</span>
+                              <span className="font-medium text-foreground">
+                                ${result.priceUsd.toFixed(result.priceUsd < 1 ? 6 : 2)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">24h:</span>
+                              <span className={`font-medium ${result.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                {result.priceChange24h >= 0 ? '+' : ''}{result.priceChange24h.toFixed(2)}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Likidite:</span>
+                              <span className="font-medium text-order-green">
+                                ${result.liquidity >= 1000000 
+                                  ? (result.liquidity / 1000000).toFixed(1) + 'M'
+                                  : result.liquidity >= 1000 
+                                    ? (result.liquidity / 1000).toFixed(1) + 'K'
+                                    : result.liquidity.toFixed(0)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Volume:</span>
+                              <span className="font-medium text-corporate-blue">
+                                ${result.volume24h >= 1000000 
+                                  ? (result.volume24h / 1000000).toFixed(1) + 'M'
+                                  : result.volume24h >= 1000 
+                                    ? (result.volume24h / 1000).toFixed(1) + 'K'
+                                    : result.volume24h.toFixed(0)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {(result.marketCap > 0 || result.fdv > 0) && (
+                          <div className="mt-1 pt-1 border-t border-border/30">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {result.marketCap > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">MCap:</span>
+                                  <span className="font-medium text-purple-400">
+                                    ${result.marketCap >= 1000000 
+                                      ? (result.marketCap / 1000000).toFixed(1) + 'M'
+                                      : result.marketCap >= 1000 
+                                        ? (result.marketCap / 1000).toFixed(1) + 'K'
+                                        : result.marketCap.toFixed(0)}
+                                  </span>
+                                </div>
+                              )}
+                              {result.fdv > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">FDV:</span>
+                                  <span className="font-medium text-orange-400">
+                                    ${result.fdv >= 1000000 
+                                      ? (result.fdv / 1000000).toFixed(1) + 'M'
+                                      : result.fdv >= 1000 
+                                        ? (result.fdv / 1000).toFixed(1) + 'K'
+                                        : result.fdv.toFixed(0)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="text-order-green group-hover:scale-110 transition-transform">
+                        <Plus className="w-5 h-5" />
+                      </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {searchQuery.length >= 1 && searchResults.length === 0 && !isSearching && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  🤔 "{searchQuery}" için Avalanche'da token bulunamadı
+                  <br />
+                  <span className="text-xs">Farklı bir anahtar kelime deneyin</span>
                 </div>
               )}
             </div>
