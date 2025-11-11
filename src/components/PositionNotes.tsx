@@ -73,7 +73,7 @@ export const PositionNotes = () => {
   const [alarmMessage, setAlarmMessage] = useState('');
   const [alarmImage, setAlarmImage] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const speechAudioRef = useRef<HTMLAudioElement | null>(null);
+  const speechAudioRef = useRef<NodeJS.Timeout | null>(null);
 
   // Request notification permission
   useEffect(() => {
@@ -95,12 +95,17 @@ export const PositionNotes = () => {
       }
     }
     
-    // Check if OrderBuyback note exists
+    // Check for default notes
     const hasOrderBuyback = loadedNotes.some(note => note.title === 'OrderBuyback');
+    const hasSwapBot = loadedNotes.some(note => note.title === 'SwapBot Konfigürasyonu');
+    const hasARENAStrategy = loadedNotes.some(note => note.title === 'ARENA Trading Strategy');
+    const hasOperationalNotes = loadedNotes.some(note => note.title === 'Operasyon Notları');
     
-    // Add default OrderBuyback note if it doesn't exist
+    // Add default notes if they don't exist
+    const defaultNotes: Note[] = [];
+    
     if (!hasOrderBuyback) {
-      const defaultNote: Note = {
+      defaultNotes.push({
         id: 'default-orderbuyback',
         title: 'OrderBuyback',
         content: `Multi-Wallet Airdrop'dan bütün prv.keylere AVAX GAS 0,1
@@ -117,8 +122,130 @@ Bu değer : bir sonraki kazanç aşamasına kadar bölünür en az değer 2K AVA
 Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
         hasAlarm: false,
         createdAt: new Date().toISOString(),
-      };
-      loadedNotes = [defaultNote, ...loadedNotes];
+      });
+    }
+
+    if (!hasSwapBot) {
+      defaultNotes.push({
+        id: 'default-swapbot',
+        title: 'SwapBot Konfigürasyonu',
+        content: `SwapBot Ayarları ve Kurallar:
+
+🔧 TEMEL AYARLAR:
+• Interval: 1440 (günde 1 kez)
+• Period: 60 saniye
+• Para Birimi: WAVAX
+• Gas Limiti: 0,000090 AVAX per işlem
+• Günlük Gas: 1440 * 0,000090 = 0,12 AVAX
+
+💰 BÜTÇE YÖNETİMİ:
+• Ana Multisig'e OrderBuyback: minimum 2K AVAX değerinde
+• Token cinsi farketmez: WAVAX, USDC, ARENA kabul edilir
+• Maksimum süre: 90 gün boyunca dağıtım
+• Her kazanç aşamasında yeni bütçe belirlenir
+
+🔐 GÜVENLİK:
+• Haftalık veya 3-4 günde bir dolum yapılır
+• Hack riskine karşı sürekli monitör edilir
+• Private key güvenliği kritik öneme sahiptir
+
+📊 PERFORMANS TAKİBİ:
+• Sürekli alım sistemi
+• Kar geldikçe otomatik yeniden yatırım
+• ROI takibi ve raporlama`,
+        hasAlarm: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    if (!hasARENAStrategy) {
+      defaultNotes.push({
+        id: 'default-arena',
+        title: 'ARENA Trading Strategy',
+        content: `ARENA Token Stratejisi:
+
+🎯 TEMEL STRATEJİ:
+• Uzun vadeli hodl pozisyonu
+• DCA (Dollar Cost Average) ile sürekli alım
+• Market volatilitesinden faydalanma
+• Gaming sektörü büyümesine yatırım
+
+📈 ALIM STRATEJİSİ:
+• Günlük SwapBot ile otomatik alım
+• Fiyat düşüşlerinde ekstra alım fırsatları
+• Teknik analiz sinyallerine göre pozisyon artırma
+• Support seviyelerinde agresif alım
+
+💎 HODL FELSEFESİ:
+• Gaming NFT ve metaverse trend'ine inanç
+• ARENA ecosystem gelişimi takibi
+• Uzun vadeli değer artışı beklentisi
+• Spekülatif alım satımdan kaçınma
+
+⚠️ RİSK YÖNETİMİ:
+• Portföy çeşitlendirmesi
+• Stop-loss seviyelerinin belirlenmesi
+• Market sentiment takibi
+• Likidite durumu monitörü
+
+🔄 REBALANCİNG:
+• Aylık portföy değerlendirmesi
+• Kar realizasyonu kuralları
+• Pozisyon büyüklüğü ayarlaması
+• Risk/ödül oranı optimizasyonu`,
+        hasAlarm: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    if (!hasOperationalNotes) {
+      defaultNotes.push({
+        id: 'default-operations',
+        title: 'Operasyon Notları',
+        content: `Günlük Operasyon Kontrol Listesi:
+
+🔍 GÜNLÜK KONTROLLER:
+• Multisig wallet bakiyeleri
+• SwapBot çalışma durumu
+• Gas fee'lerin yeterliliği
+• Alert sisteminin aktifliği
+
+💸 MALİ İŞLEMLER:
+• Multi-Wallet Airdrop dağıtımları
+• Ana Multisig'e fund transferi
+• Gas fee hesaplamaları
+• Kar/zarar hesaplamaları
+
+📱 MONİTÖRİNG:
+• Price alert'lerin kontrolü
+• Trading bot'ların durumu
+• Market trend analizi
+• Volume ve likidite takibi
+
+🛡️ GÜVENLİK PROTOKOLÜ:
+• Private key güvenliği
+• Multi-signature onayları
+• Backup stratejilerinin testi
+• Incident response planları
+
+📊 RAPORLAMA:
+• Günlük P&L raporu
+• Token performans analizi
+• Bot efficiency metrics
+• Risk assessment updates
+
+⚙️ MAINTENANCE:
+• System health check'leri
+• API connection testleri
+• Database backup'ları
+• Configuration updates`,
+        hasAlarm: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    
+    if (defaultNotes.length > 0) {
+      loadedNotes = [...defaultNotes, ...loadedNotes];
       localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(loadedNotes));
     }
     
@@ -246,11 +373,14 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
         try { setAlarms(JSON.parse(savedAlarms)); } catch (e) { console.error('Error loading alarms:', e); }
       }
     };
-    window.addEventListener('alarms-updated', reload as any);
-    window.addEventListener('storage', reload);
+    const handleAlarmsUpdate = () => reload();
+    const handleStorageUpdate = () => reload();
+    
+    window.addEventListener('alarms-updated', handleAlarmsUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
     return () => {
-      window.removeEventListener('alarms-updated', reload as any);
-      window.removeEventListener('storage', reload);
+      window.removeEventListener('alarms-updated', handleAlarmsUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
     };
   }, []);
 
@@ -327,7 +457,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
           window.speechSynthesis.speak(utterance);
           
           // Store interval for cleanup
-          (speechAudioRef.current as any) = speakInterval;
+          speechAudioRef.current = speakInterval;
         }
       }
     } catch (error) {
@@ -344,9 +474,9 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
     
     // Stop speech
     window.speechSynthesis.cancel();
-    if ((speechAudioRef.current as any)) {
-      clearInterval((speechAudioRef.current as any));
-      (speechAudioRef.current as any) = null;
+    if (speechAudioRef.current) {
+      clearInterval(speechAudioRef.current);
+      speechAudioRef.current = null;
     }
     
     // Close dialog
@@ -611,7 +741,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
                 
                 {/* Alarm Details */}
                 <div className="text-center space-y-4 max-w-lg">
-                  <h3 className="text-4xl font-black text-order-green animate-bounce bg-gradient-to-r from-order-green via-emerald-400 to-green-500 bg-clip-text text-transparent">
+                  <h3 className="text-4xl font-black animate-bounce bg-gradient-to-r from-order-green via-emerald-400 to-green-500 bg-clip-text text-transparent">
                     {activeAlarm.title}
                   </h3>
                   <p className="text-2xl text-foreground font-bold px-4 py-3 bg-background/50 rounded-xl border-2 border-order-green/30 backdrop-blur-sm shadow-lg">

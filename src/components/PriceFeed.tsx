@@ -59,6 +59,11 @@ const PriceFeedComponent = ({ name, symbol, pairAddress, logo, isTokenAddress = 
 
   // Get last note info with seasonal auto-suggestion
   const getLastNote = () => {
+    // Force stablecoins to show SELL
+    if (['GHO', 'USDC', 'DAI.e', 'USDT', 'EURC'].includes(symbol)) {
+      return { type: 'SELL' as const, content: 'Stablecoin Satış', isManual: false };
+    }
+
     const notes = localStorage.getItem(`trading-notes-${symbol}`);
     if (notes) {
       try {

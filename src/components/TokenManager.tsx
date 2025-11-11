@@ -68,7 +68,7 @@ const DEFAULT_TOKENS: MultisigToken[] = [
     name: 'Bitcoin (Bridged)',
     address: '0x152b9d0FdC40C096757F570A51E494bd4b943E50',
     logo: 'https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw',
-    pairAddress: null,
+    pairAddress: '0x8FEF4fE4970a5D6bFa7C65871a2EbFD0F42aa822',
     enabled: true,
   },
   {
@@ -86,7 +86,7 @@ const DEFAULT_TOKENS: MultisigToken[] = [
     name: 'Bridge Tether',
     address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
     logo: 'https://imgproxy-mainnet.routescan.io/Fb6h0SafZL7XFjqRB7ZYmrh5K4UBcz3e3idexRqjLBA/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvdXNkdC10ZXRoZXItbG9nby5kNTdiN2RlYzYxN2IucG5n',
-    pairAddress: '0x2823299af89285fF1a1abF58DB37cE57006FEf5D',
+    pairAddress: null,
     enabled: true,
   },
   {
@@ -95,7 +95,7 @@ const DEFAULT_TOKENS: MultisigToken[] = [
     name: 'Tether USD',
     address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
     logo: 'https://imgproxy-mainnet.routescan.io/Fb6h0SafZL7XFjqRB7ZYmrh5K4UBcz3e3idexRqjLBA/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvdXNkdC10ZXRoZXItbG9nby5kNTdiN2RlYzYxN2IucG5n',
-    pairAddress: '0x2823299af89285fF1a1abF58DB37cE57006FEf5D',
+    pairAddress: null,
     enabled: true,
   },
   {
@@ -104,7 +104,7 @@ const DEFAULT_TOKENS: MultisigToken[] = [
     name: 'Circle EURO',
     address: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD',
     logo: 'https://imgproxy-mainnet.routescan.io/MS8AU1mCVjdR9AeyiIdTJG_0PvIrnAKwi695D8XAzR4/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvY2lyY2xlZXVyY29pbnNud18zMi5iOTFlMzMyNGZiNTMucG5n',
-    pairAddress: '0xcD4f57d6B160B4ef2DFb78Ad1c76Cc4242EDB4CE',
+    pairAddress: null,
     enabled: true,
   },
 ];
