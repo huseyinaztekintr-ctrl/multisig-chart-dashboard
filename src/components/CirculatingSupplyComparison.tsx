@@ -10,13 +10,26 @@ import { getEnabledAddresses, getManualEntries, useNonCirculatingAddresses } fro
 const ORDER_TOKEN = '0x1BEd077195307229FcCBC719C5f2ce6416A58180';
 const MAX_SUPPLY = 10000000000;
 
+// Core addresses that should be active in comparison mode
+const CORE_ACTIVE_ADDRESSES = [
+  '0x5147fff4794FD96c1B0E64dCcA921CA0EE1cdA8d', // LP Pool (WAVAX/ORDER)
+  '0x000000000000000000000000000000000000dEaD', // Burned
+  '0xab3AeC80f3b986af37f1aE9D22b795a9D9Ef4011', // OrderLend
+  '0xB799CD1f2ED5dB96ea94EdF367fBA2d90dfd9634', // Team 1
+  '0xAA1A1c49b8fd0AA010387Cb2d8b5A0fc950205aB', // Team 2
+  '0x0131E47D3815b41A6C0a9072Ba6BB84912A65Bb2', // Team 3
+  '0xb999C018B79578ab92D495e084e420A155eB63a7', // Team 4
+  '0xAc7e3b8242e0915d22C107c411b90cAc702EBC56', // WITCH/ORDER Pool
+  '0x5151Ecca198557Abe46478a86879BAD91Dc423D3', // EcoLP Multisig
+];
+
 const CirculatingSupplyComparisonComponent = () => {
   const [selectedCirculating, setSelectedCirculating] = useState<number>(0);
-  const [allAddressesCirculating, setAllAddressesCirculating] = useState<number>(0);
+  const [coreAddressesCirculating, setCoreAddressesCirculating] = useState<number>(0);
   const [selectedValue, setSelectedValue] = useState<TokenPrice>({ usd: 0, try: 0, avax: 0, btc: 0, arena: 0, order: 0 });
-  const [allAddressesValue, setAllAddressesValue] = useState<TokenPrice>({ usd: 0, try: 0, avax: 0, btc: 0, arena: 0, order: 0 });
+  const [coreAddressesValue, setCoreAddressesValue] = useState<TokenPrice>({ usd: 0, try: 0, avax: 0, btc: 0, arena: 0, order: 0 });
   const [loading, setLoading] = useState(true);
-  const [showAllAddresses, setShowAllAddresses] = useState(false);
+  const [showCoreAddresses, setShowCoreAddresses] = useState(false);
   
   const { addresses } = useNonCirculatingAddresses();
 
@@ -60,7 +73,7 @@ const CirculatingSupplyComparisonComponent = () => {
           console.error('Error fetching TRY rate:', error);
         }
 
-        // Calculate for selected addresses (current behavior)
+        // Calculate for selected addresses (current behavior - user's selected addresses)
         const enabledAddresses = getEnabledAddresses();
         const manualEntries = getManualEntries();
         const manualTotal = manualEntries.reduce((sum, entry) => sum + (entry.manualAmount || 0), 0);
@@ -71,25 +84,19 @@ const CirculatingSupplyComparisonComponent = () => {
         const selectedNonCirculating = selectedBalances.reduce((sum, bal) => sum + bal, 0) + manualTotal;
         const selectedCirculatingAmount = MAX_SUPPLY - selectedNonCirculating;
 
-        // Calculate for ALL addresses (including disabled ones)
-        const allAddresses = addresses.filter(addr => addr.type === 'address').map(addr => addr.address);
-        const allBalances = await Promise.all(
-          allAddresses.map(address => getTokenBalance(ORDER_TOKEN, address))
+        // Calculate for CORE addresses only (LP, Burned, OrderLend, Teams, WITCH, EcoLP)
+        const coreBalances = await Promise.all(
+          CORE_ACTIVE_ADDRESSES.map(address => getTokenBalance(ORDER_TOKEN, address))
         );
-        
-        // Add ALL manual entries (both enabled and disabled)
-        const allManualEntries = addresses.filter(addr => addr.type === 'manual');
-        const allManualTotal = allManualEntries.reduce((sum, entry) => sum + (entry.manualAmount || 0), 0);
-        
-        const allNonCirculating = allBalances.reduce((sum, bal) => sum + bal, 0) + allManualTotal;
-        const allCirculatingAmount = MAX_SUPPLY - allNonCirculating;
+        const coreNonCirculating = coreBalances.reduce((sum, bal) => sum + bal, 0);
+        const coreCirculatingAmount = MAX_SUPPLY - coreNonCirculating;
 
         // Set states
         setSelectedCirculating(selectedCirculatingAmount);
-        setAllAddressesCirculating(allCirculatingAmount);
+        setCoreAddressesCirculating(coreCirculatingAmount);
         
         setSelectedValue(calculateValue(selectedCirculatingAmount, orderPrice, avaxPrice, arenaPrice, tryRate));
-        setAllAddressesValue(calculateValue(allCirculatingAmount, orderPrice, avaxPrice, arenaPrice, tryRate));
+        setCoreAddressesValue(calculateValue(coreCirculatingAmount, orderPrice, avaxPrice, arenaPrice, tryRate));
         
       } catch (error) {
         console.error('Error calculating circulating supply:', error);
@@ -111,8 +118,8 @@ const CirculatingSupplyComparisonComponent = () => {
     };
   }, [addresses]);
 
-  const currentData = showAllAddresses ? 
-    { circulating: allAddressesCirculating, value: allAddressesValue } :
+  const currentData = showCoreAddresses ? 
+    { circulating: coreAddressesCirculating, value: coreAddressesValue } :
     { circulating: selectedCirculating, value: selectedValue };
 
   const ComparisonCard = ({ title, circulating, value, isComparison = false }: {
@@ -214,7 +221,7 @@ const CirculatingSupplyComparisonComponent = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              {showAllAddresses ? (
+              {showCoreAddresses ? (
                 <Eye className="w-4 h-4 text-purple-400" />
               ) : (
                 <EyeOff className="w-4 h-4 text-blue-400" />
@@ -225,16 +232,16 @@ const CirculatingSupplyComparisonComponent = () => {
             </div>
             <Switch
               id="comparison-mode"
-              checked={showAllAddresses}
-              onCheckedChange={setShowAllAddresses}
+              checked={showCoreAddresses}
+              onCheckedChange={setShowCoreAddresses}
               className="data-[state=checked]:bg-purple-500"
             />
           </div>
           <div className="text-xs text-muted-foreground">
-            {showAllAddresses ? (
+            {showCoreAddresses ? (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                Tüm Adresler Açık
+                Temel Adresler
               </span>
             ) : (
               <span className="flex items-center gap-1">
@@ -246,8 +253,8 @@ const CirculatingSupplyComparisonComponent = () => {
         </div>
         
         <div className="mt-2 text-xs text-muted-foreground">
-          💡 {showAllAddresses ? 
-            'Şu anda TÜM dolaşım dışı adresler hesaplamaya dahil edildi' : 
+          💡 {showCoreAddresses ? 
+            'Şu anda sadece TEMEL adresler hesaplamaya dahil: LP, Burned, OrderLend, Teams, WITCH, EcoLP' : 
             'Şu anda sadece ETKİN olan adresler hesaplamaya dahil edildi'
           }
         </div>
@@ -264,7 +271,7 @@ const CirculatingSupplyComparisonComponent = () => {
         
         {/* Comparison Card */}
         <ComparisonCard
-          title={showAllAddresses ? "Dolaşımdaki ORDER (Tüm Adresler Açık)" : "Karşılaştırma (Seçtiklerim)"}
+          title={showCoreAddresses ? "Dolaşımdaki ORDER (Temel Adresler)" : "Dolaşımdaki ORDER (Seçtiklerim)"}
           circulating={currentData.circulating}
           value={currentData.value}
           isComparison={true}
@@ -281,17 +288,17 @@ const CirculatingSupplyComparisonComponent = () => {
             </div>
             <div className="text-right">
               <div className="text-sm font-bold text-amber-500">
-                {Math.abs(allAddressesCirculating - selectedCirculating).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ORDER
+                {Math.abs(coreAddressesCirculating - selectedCirculating).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ORDER
               </div>
               <div className="text-xs text-muted-foreground">
-                ${Math.abs(allAddressesValue.usd - selectedValue.usd).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} USD fark
+                ${Math.abs(coreAddressesValue.usd - selectedValue.usd).toLocaleString('tr-TR', { maximumFractionDigits: 0 })} USD fark
               </div>
             </div>
           </div>
           <div className="mt-2 text-xs text-muted-foreground">
-            📊 {allAddressesCirculating > selectedCirculating ? 
-              'Tüm adresler açık olduğunda dolaşım DAHA FAZLA' : 
-              'Seçtikleriniz açık olduğunda dolaşım DAHA FAZLA'
+            📊 {coreAddressesCirculating > selectedCirculating ? 
+              'Temel adresler kullanıldığında dolaşım DAHA FAZLA' : 
+              'Seçtikleriniz kullanıldığında dolaşım DAHA FAZLA'
             }
           </div>
         </Card>
