@@ -7,6 +7,7 @@ import { Percent, Plus, X, ChevronDown } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useState, useEffect, memo } from 'react';
 import { fetchDexScreenerPrice, fetchDexScreenerPriceByToken } from '@/utils/blockchain';
+import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
 interface ManualTokenEntry {
   id: string;
@@ -18,7 +19,9 @@ interface ManualTokenEntry {
   enabled: boolean;
 }
 
-const MANUAL_TOKENS_STORAGE_KEY = 'manual-aave-tokens';
+// Get token-specific storage key for manual AAVE tokens
+const getManualTokensStorageKey = (tokenSymbol: string) => `manual-aave-tokens-${tokenSymbol}`;
+
 const MULTISIG_VALUE_STORAGE_KEY = 'multisig-total-value';
 const TRY_RATE_STORAGE_KEY = 'try-exchange-rate';
 const MULTISIG_AUTO_ENABLED_KEY = 'multisig-auto-enabled';
@@ -73,17 +76,21 @@ const DEFAULT_LENDING_POSITIONS: ManualTokenEntry[] = [
 ];
 
 const AAVEYieldCalculatorComponent = () => {
+  const selectedToken = getCurrentSelectedToken();
+  const manualTokensStorageKey = getManualTokensStorageKey(selectedToken.symbol);
+  
   const [manualTokens, setManualTokens] = useState<ManualTokenEntry[]>(() => {
-    const saved = localStorage.getItem(MANUAL_TOKENS_STORAGE_KEY);
+    const saved = localStorage.getItem(manualTokensStorageKey);
     if (saved) {
       const parsed = JSON.parse(saved);
       // Ensure all entries have enabled property (for backward compatibility)
-      return parsed.map((entry: any) => ({
+      return parsed.map((entry: ManualTokenEntry) => ({
         ...entry,
         enabled: entry.enabled !== undefined ? entry.enabled : true
       }));
     }
-    return DEFAULT_LENDING_POSITIONS;
+    // Only return default positions for ARENA token
+    return selectedToken.symbol === 'ARENA' ? DEFAULT_LENDING_POSITIONS : [];
   });
   
   const [newManualToken, setNewManualToken] = useState('');
@@ -98,6 +105,30 @@ const AAVEYieldCalculatorComponent = () => {
     const saved = localStorage.getItem(MULTISIG_AUTO_ENABLED_KEY);
     return saved === null ? true : saved === 'true';
   });
+
+  // Listen for token changes and reload manual tokens
+  useEffect(() => {
+    const handleTokenChange = (event: CustomEvent) => {
+      const newToken = event.detail;
+      const newStorageKey = getManualTokensStorageKey(newToken.symbol);
+      const saved = localStorage.getItem(newStorageKey);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const migrated = parsed.map((entry: ManualTokenEntry) => ({
+          ...entry,
+          enabled: entry.enabled !== undefined ? entry.enabled : true
+        }));
+        setManualTokens(migrated);
+      } else {
+        // Only return default positions for ARENA token
+        setManualTokens(newToken.symbol === 'ARENA' ? DEFAULT_LENDING_POSITIONS : []);
+      }
+    };
+
+    window.addEventListener('selected-token-changed', handleTokenChange as EventListener);
+    return () => window.removeEventListener('selected-token-changed', handleTokenChange as EventListener);
+  }, []);
 
   const getEnabledTokens = () => {
     const tokensData = localStorage.getItem('multisig-tokens');
@@ -198,7 +229,7 @@ const AAVEYieldCalculatorComponent = () => {
     
     const updatedTokens = [...manualTokens, newEntry];
     setManualTokens(updatedTokens);
-    localStorage.setItem(MANUAL_TOKENS_STORAGE_KEY, JSON.stringify(updatedTokens));
+    localStorage.setItem(manualTokensStorageKey, JSON.stringify(updatedTokens));
     
     setNewManualToken('');
     setNewManualAmount('');
@@ -213,7 +244,7 @@ const AAVEYieldCalculatorComponent = () => {
       t.id === id ? { ...t, enabled: !t.enabled } : t
     );
     setManualTokens(updatedTokens);
-    localStorage.setItem(MANUAL_TOKENS_STORAGE_KEY, JSON.stringify(updatedTokens));
+    localStorage.setItem(manualTokensStorageKey, JSON.stringify(updatedTokens));
     window.dispatchEvent(new CustomEvent('manual-tokens-updated'));
   };
 
@@ -226,7 +257,7 @@ const AAVEYieldCalculatorComponent = () => {
   const deleteManualToken = (id: string) => {
     const updatedTokens = manualTokens.filter(t => t.id !== id);
     setManualTokens(updatedTokens);
-    localStorage.setItem(MANUAL_TOKENS_STORAGE_KEY, JSON.stringify(updatedTokens));
+    localStorage.setItem(manualTokensStorageKey, JSON.stringify(updatedTokens));
     window.dispatchEvent(new CustomEvent('manual-tokens-updated'));
   };
 

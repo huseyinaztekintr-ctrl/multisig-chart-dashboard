@@ -16,8 +16,17 @@ import { MultisigLastActivity } from '@/components/MultisigLastActivity';
 import { DebtBalance } from '@/components/DebtBalance';
 import { SwapBot } from '@/components/SwapBot';
 import { AirdropCard } from '@/components/AirdropCard';
+import { MultisigTokenSelector } from '@/components/MultisigTokenSelector';
+import { useSelectedToken } from '@/hooks/useSelectedToken';
+import { useEffect } from 'react';
 
 const Index = () => {
+  const { selectedToken } = useSelectedToken();
+
+  // Update document title based on selected token
+  useEffect(() => {
+    document.title = `${selectedToken.symbol} Multisig Yönetişim Paneli | Avalanche DeFi Analytics`;
+  }, [selectedToken.symbol]);
 
   return (
     <div className="min-h-screen lg:h-screen flex flex-col bg-background lg:overflow-hidden">
@@ -32,15 +41,15 @@ const Index = () => {
               <div className="relative">
                 <div className="absolute inset-0 bg-order-green/20 rounded-full blur-lg animate-glow-pulse" />
                 <img 
-                  src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
-                  alt="ORDER" 
+                  src={selectedToken.logo} 
+                  alt={selectedToken.symbol} 
                   className="relative w-8 h-8 rounded-full ring-2 ring-order-green/50 shadow-[0_0_15px_rgba(25,209,136,0.4)] group-hover:ring-order-green group-hover:shadow-[0_0_20px_rgba(25,209,136,0.6)] transition-all duration-300"
                 />
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-order-green rounded-full border-2 border-background animate-pulse shadow-[0_0_8px_rgba(25,209,136,0.8)]" />
               </div>
               <div>
                 <h1 className="text-sm font-bold bg-gradient-to-r from-order-green via-order-green-glow to-order-green bg-clip-text text-transparent whitespace-nowrap tracking-wide drop-shadow-[0_0_8px_rgba(25,209,136,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(25,209,136,0.6)] transition-all duration-300">
-                  ORDER Multisig
+                  {selectedToken.symbol} Multisig
                 </h1>
                 <p className="text-[10px] text-order-green/70 font-medium whitespace-nowrap">⚡ Yönetişim Paneli</p>
               </div>
@@ -77,10 +86,11 @@ const Index = () => {
               </div>
               <div className="flex-1 min-w-[140px]">
                 <PriceFeed
-                  name="ORDER"
-                  symbol="ORDER"
-                  pairAddress="0x5147fff4794fd96c1b0e64dcca921ca0ee1cda8d"
-                  logo="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw"
+                  name={selectedToken.name}
+                  symbol={selectedToken.symbol}
+                  pairAddress={selectedToken.pairAddress || selectedToken.address}
+                  logo={selectedToken.logo}
+                  isTokenAddress={!selectedToken.pairAddress}
                 />
               </div>
               <div className="flex-1 min-w-[140px]">
@@ -167,6 +177,9 @@ const Index = () => {
             {/* AAVE Yield Calculator */}
             <AAVEYieldCalculator />
             
+            {/* Multisig Token Selector */}
+            <MultisigTokenSelector />
+            
             {/* Airdrop Card */}
             <AirdropCard />
             
@@ -203,7 +216,7 @@ const Index = () => {
       <footer className="border-t border-border/50 py-2 flex-shrink-0">
         <div className="px-4 text-center">
           <p className="text-xs text-muted-foreground">
-            ORDER Multisig • Avalanche C-Chain • DexScreener & Avalanche RPC
+            {selectedToken.symbol} Multisig • Avalanche C-Chain • DexScreener & Avalanche RPC
           </p>
         </div>
       </footer>

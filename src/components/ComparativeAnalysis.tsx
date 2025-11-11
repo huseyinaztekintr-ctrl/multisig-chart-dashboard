@@ -4,17 +4,17 @@ import { TrendingUp, Scale, Percent, Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getTokenBalance, fetchDexScreenerPrice } from '@/utils/blockchain';
+import { getTokenBalance, fetchDexScreenerPrice, fetchDexScreenerPriceByToken } from '@/utils/blockchain';
 import { getEnabledAddresses, getManualEntries } from './AddressManager';
 import { getEnabledTokens } from './TokenManager';
 import { StrategyTable } from './StrategyTable';
 import { getEnabledWallets } from './WalletManager';
+import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
-const ORDER_TOKEN = '0x1BEd077195307229FcCBC719C5f2ce6416A58180';
-const MAX_SUPPLY = 10000000000;
 const MULTISIG_ADDRESS = '0xB799CD1f2ED5dB96ea94EdF367fBA2d90dfd9634';
 
 const ComparativeAnalysisComponent = () => {
+  const [selectedToken, setSelectedToken] = useState(() => getCurrentSelectedToken());
   const [data, setData] = useState({
     circulatingSupply: 0,
     circulatingValue: 0,
@@ -42,28 +42,40 @@ const ComparativeAnalysisComponent = () => {
   const [tryRate, setTryRate] = useState(34.5);
   const [debtTotalValue, setDebtTotalValue] = useState(0);
 
+  // Listen for selected token changes
+  useEffect(() => {
+    const handleTokenChange = (event: CustomEvent) => {
+      setSelectedToken(event.detail);
+    };
+
+    window.addEventListener('selected-token-changed', handleTokenChange as EventListener);
+    return () => window.removeEventListener('selected-token-changed', handleTokenChange as EventListener);
+  }, []);
+
   useEffect(() => {
     const calculateComparison = async () => {
-      // Get enabled addresses from localStorage
-      const enabledAddresses = getEnabledAddresses();
+      // Get enabled addresses from localStorage - token specific
+      const enabledAddresses = getEnabledAddresses(selectedToken.symbol);
       
       // Fetch non-circulating balances dynamically
       const balances = await Promise.all(
-        enabledAddresses.map(address => getTokenBalance(ORDER_TOKEN, address))
+        enabledAddresses.map(address => getTokenBalance(selectedToken.address, address))
       );
 
-      // Get manual entries
-      const manualEntries = getManualEntries();
+      // Get manual entries - token specific
+      const manualEntries = getManualEntries(selectedToken.symbol);
       const manualTotal = manualEntries.reduce((sum, entry) => sum + entry.manualAmount, 0);
 
       const totalNonCirculating = balances.reduce((sum, bal) => sum + bal, 0) + manualTotal;
-      const circulatingSupply = MAX_SUPPLY - totalNonCirculating;
+      const circulatingSupply = selectedToken.maxSupply - totalNonCirculating;
 
       // Get prices
-      const orderPriceData = await fetchDexScreenerPrice('0x5147fff4794fd96c1b0e64dcca921ca0ee1cda8d');
+      const tokenPriceData = selectedToken.pairAddress 
+        ? await fetchDexScreenerPrice(selectedToken.pairAddress)
+        : await fetchDexScreenerPriceByToken(selectedToken.address);
       const arenaPriceData = await fetchDexScreenerPrice('0x3c5f68d2f72debba4900c60f32eb8629876401f2');
       const avaxPriceData = await fetchDexScreenerPrice('0x864d4e5ee7318e97483db7eb0912e09f161516ea');
-      const orderPrice = orderPriceData.price;
+      const tokenPrice = tokenPriceData.price;
       const arenaPrice = arenaPriceData.price;
       const avaxPrice = avaxPriceData.price;
       const btcPrice = 95000; // Mock BTC price
@@ -120,8 +132,8 @@ const ComparativeAnalysisComponent = () => {
         for (const debt of debts) {
           if (debt.token === 'TRY') {
             debtTotal += debt.amount / currentTryRate;
-          } else if (debt.token === 'ORDER') {
-            debtTotal += debt.amount * orderPrice;
+          } else if (debt.token === selectedToken.symbol) {
+            debtTotal += debt.amount * tokenPrice;
           } else if (debt.token === 'ARENA') {
             debtTotal += debt.amount * arenaPrice;
           } else if (debt.token === 'AVAX') {
@@ -149,7 +161,7 @@ const ComparativeAnalysisComponent = () => {
       // Subtract debt from multisig total
       multisigTotalValue -= debtTotal;
       
-      const circulatingValue = circulatingSupply * orderPrice;
+      const circulatingValue = circulatingSupply * tokenPrice;
       const difference = Math.abs(circulatingValue - multisigTotalValue);
       const isCirculatingLeading = circulatingValue > multisigTotalValue;
       // Calculate ratio using absolute magnitudes so it's always ≥ 1 (larger / smaller)
@@ -178,13 +190,13 @@ const ComparativeAnalysisComponent = () => {
         multisigTotalValueAvax: multisigTotalValue / avaxPrice,
         multisigTotalValueBtc: multisigTotalValue / btcPrice,
         multisigTotalValueArena: multisigTotalValue / arenaPrice,
-        multisigTotalValueOrder: multisigTotalValue / orderPrice,
+        multisigTotalValueOrder: multisigTotalValue / tokenPrice,
         difference,
         differenceTry: difference * currentTryRate,
         differenceAvax: difference / avaxPrice,
         differenceBtc: difference / btcPrice,
         differenceArena: difference / arenaPrice,
-        differenceOrder: difference / orderPrice,
+        differenceOrder: difference / tokenPrice,
         ratio,
         isCirculatingLeading,
       });
@@ -216,7 +228,7 @@ const ComparativeAnalysisComponent = () => {
       window.removeEventListener('manual-tokens-updated', handleUpdate);
       window.removeEventListener('debt-balance-updated', handleUpdate);
     };
-  }, []);
+  }, [selectedToken.address, selectedToken.maxSupply, selectedToken.pairAddress, selectedToken.symbol]);
 
   return (
     <div className="space-y-4">
@@ -240,7 +252,7 @@ const ComparativeAnalysisComponent = () => {
                 ? 'bg-corporate-blue/10 border-corporate-blue/30 ring-2 ring-corporate-blue shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
                 : 'bg-destructive/10 border-destructive/30 ring-2 ring-destructive shadow-[0_0_20px_rgba(239,68,68,0.4)]'
             }`}>
-              <p className="text-xs text-muted-foreground mb-1">Dolaşımdaki ORDER</p>
+              <p className="text-xs text-muted-foreground mb-1">Dolaşımdaki {selectedToken.symbol}</p>
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
                   <span className={`font-bold text-xs ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-destructive'}`}>$</span>
@@ -283,13 +295,13 @@ const ComparativeAnalysisComponent = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <img 
-                    src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
-                    alt="ORDER" 
+                    src={selectedToken.logo} 
+                    alt={selectedToken.symbol} 
                     className="w-3 h-3"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {data.circulatingValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ORDER
-                  </p>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {data.circulatingValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} {selectedToken.symbol}
+                  </span>
                 </div>
               </div>
             </div>

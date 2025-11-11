@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Settings, Plus, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
 export interface NonCirculatingAddress {
   id: string;
@@ -16,6 +17,18 @@ export interface NonCirculatingAddress {
   reason?: string;
 }
 
+// Common default addresses for all tokens (based on ORDER's active addresses)
+const COMMON_DEFAULT_ADDRESSES: NonCirculatingAddress[] = [
+  { id: '1', name: 'Burned', address: '0x000000000000000000000000000000000000dEaD', enabled: true, type: 'address' },
+  { id: '2', name: 'Team 1', address: '0xB799CD1f2ED5dB96ea94EdF367fBA2d90dfd9634', enabled: true, type: 'address' },
+  { id: '3', name: 'Team 2', address: '0xAA1A1c49b8fd0AA010387Cb2d8b5A0fc950205aB', enabled: true, type: 'address' },
+  { id: '4', name: 'Team 3', address: '0x0131E47D3815b41A6C0a9072Ba6BB84912A65Bb2', enabled: true, type: 'address' },
+  { id: '5', name: 'Team 4', address: '0xb999C018B79578ab92D495e084e420A155eB63a7', enabled: true, type: 'address' },
+  { id: '6', name: 'EcoLP Multisig', address: '0x5151Ecca198557Abe46478a86879BAD91Dc423D3', enabled: true, type: 'address' },
+  { id: '7', name: 'Extra Address 1', address: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD', enabled: false, type: 'address' },
+];
+
+// ORDER-specific legacy addresses (for backward compatibility)
 const DEFAULT_ADDRESSES: NonCirculatingAddress[] = [
   { id: '1', name: 'LP Pool (WAVAX/ORDER)', address: '0x5147fff4794FD96c1B0E64dCcA921CA0EE1cdA8d', enabled: true, type: 'address' },
   { id: '2', name: 'Burned', address: '0x000000000000000000000000000000000000dEaD', enabled: true, type: 'address' },
@@ -39,16 +52,32 @@ const DEFAULT_ADDRESSES: NonCirculatingAddress[] = [
   { id: '20', name: 'xORDER Boosting', address: '0xc5dec1750557497f95ab54818e88a25c4a72609a', enabled: false, type: 'address' },
 ];
 
-const STORAGE_KEY = 'non-circulating-addresses';
+// Get token-specific storage key
+const getStorageKey = (tokenSymbol: string) => `non-circulating-addresses-${tokenSymbol}`;
+
+// Get default addresses for tokens
+const getDefaultAddresses = (tokenSymbol: string): NonCirculatingAddress[] => {
+  switch (tokenSymbol) {
+    case 'ORDER':
+      // ORDER keeps its legacy addresses for backward compatibility
+      return DEFAULT_ADDRESSES;
+    default:
+      // All other tokens (ARENA, BTC.b, USDC, etc.) use common default addresses
+      return COMMON_DEFAULT_ADDRESSES;
+  }
+};
 
 export const useNonCirculatingAddresses = () => {
+  const selectedToken = getCurrentSelectedToken();
+  const storageKey = getStorageKey(selectedToken.symbol);
+  
   const [addresses, setAddresses] = useState<NonCirculatingAddress[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return DEFAULT_ADDRESSES;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) return getDefaultAddresses(selectedToken.symbol);
     
     const parsed = JSON.parse(stored);
     // Migration: Add type field to old addresses
-    const migrated = parsed.map((addr: any) => ({
+    const migrated = parsed.map((addr: NonCirculatingAddress) => ({
       ...addr,
       type: addr.type || 'address'
     }));
@@ -56,22 +85,49 @@ export const useNonCirculatingAddresses = () => {
     return migrated;
   });
 
+  // Listen for token changes and reload addresses
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
+    const handleTokenChange = (event: CustomEvent) => {
+      const newToken = event.detail;
+      const newStorageKey = getStorageKey(newToken.symbol);
+      const stored = localStorage.getItem(newStorageKey);
+      
+      if (!stored) {
+        setAddresses(getDefaultAddresses(newToken.symbol));
+      } else {
+        const parsed = JSON.parse(stored);
+        const migrated = parsed.map((addr: NonCirculatingAddress) => ({
+          ...addr,
+          type: addr.type || 'address'
+        }));
+        setAddresses(migrated);
+      }
+    };
+
+    window.addEventListener('selected-token-changed', handleTokenChange as EventListener);
+    return () => window.removeEventListener('selected-token-changed', handleTokenChange as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const currentStorageKey = getStorageKey(selectedToken.symbol);
+    localStorage.setItem(currentStorageKey, JSON.stringify(addresses));
     // Trigger custom event for other components to update
     window.dispatchEvent(new CustomEvent('addresses-updated'));
-  }, [addresses]);
+  }, [addresses, selectedToken.symbol]);
 
   return { addresses, setAddresses };
 };
 
-export const getEnabledAddresses = (): string[] => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return DEFAULT_ADDRESSES.map(addr => addr.address);
+export const getEnabledAddresses = (tokenSymbol?: string): string[] => {
+  const selectedToken = tokenSymbol ? { symbol: tokenSymbol } : getCurrentSelectedToken();
+  const storageKey = getStorageKey(selectedToken.symbol);
+  const stored = localStorage.getItem(storageKey);
+  
+  if (!stored) return getDefaultAddresses(selectedToken.symbol).map(addr => addr.address);
   
   const parsed = JSON.parse(stored);
   // Migration: Add type field to old addresses
-  const addresses: NonCirculatingAddress[] = parsed.map((addr: any) => ({
+  const addresses: NonCirculatingAddress[] = parsed.map((addr: NonCirculatingAddress) => ({
     ...addr,
     type: addr.type || 'address'
   }));
@@ -79,13 +135,16 @@ export const getEnabledAddresses = (): string[] => {
   return addresses.filter(addr => addr.enabled && addr.type === 'address').map(addr => addr.address);
 };
 
-export const getManualEntries = (): NonCirculatingAddress[] => {
-  const stored = localStorage.getItem(STORAGE_KEY);
+export const getManualEntries = (tokenSymbol?: string): NonCirculatingAddress[] => {
+  const selectedToken = tokenSymbol ? { symbol: tokenSymbol } : getCurrentSelectedToken();
+  const storageKey = getStorageKey(selectedToken.symbol);
+  const stored = localStorage.getItem(storageKey);
+  
   if (!stored) return [];
   
   const parsed = JSON.parse(stored);
   // Migration: Add type field to old addresses
-  const addresses: NonCirculatingAddress[] = parsed.map((addr: any) => ({
+  const addresses: NonCirculatingAddress[] = parsed.map((addr: NonCirculatingAddress) => ({
     ...addr,
     type: addr.type || 'address'
   }));
@@ -93,14 +152,62 @@ export const getManualEntries = (): NonCirculatingAddress[] => {
   return addresses.filter(addr => addr.enabled && addr.type === 'manual');
 };
 
+export const getAllManualEntries = (tokenSymbol?: string): NonCirculatingAddress[] => {
+  const selectedToken = tokenSymbol ? { symbol: tokenSymbol } : getCurrentSelectedToken();
+  const storageKey = getStorageKey(selectedToken.symbol);
+  const stored = localStorage.getItem(storageKey);
+  
+  if (!stored) return [];
+  
+  const parsed = JSON.parse(stored);
+  // Migration: Add type field to old addresses
+  const addresses: NonCirculatingAddress[] = parsed.map((addr: NonCirculatingAddress) => ({
+    ...addr,
+    type: addr.type || 'address'
+  }));
+  
+  // Return ALL manual entries (both enabled and disabled)
+  return addresses.filter(addr => addr.type === 'manual');
+};
+
+export const getAllAddresses = (tokenSymbol?: string): string[] => {
+  const selectedToken = tokenSymbol ? { symbol: tokenSymbol } : getCurrentSelectedToken();
+  const storageKey = getStorageKey(selectedToken.symbol);
+  const stored = localStorage.getItem(storageKey);
+  
+  if (!stored) return getDefaultAddresses(selectedToken.symbol).map(addr => addr.address);
+  
+  const parsed = JSON.parse(stored);
+  // Migration: Add type field to old addresses
+  const addresses: NonCirculatingAddress[] = parsed.map((addr: NonCirculatingAddress) => ({
+    ...addr,
+    type: addr.type || 'address'
+  }));
+  
+  // Return ALL addresses (both enabled and disabled) - this is the difference from getEnabledAddresses
+  return addresses.filter(addr => addr.type === 'address').map(addr => addr.address);
+};
+
 export const AddressManager = () => {
   const { addresses, setAddresses } = useNonCirculatingAddresses();
+  const [selectedToken, setSelectedToken] = useState(() => getCurrentSelectedToken());
   const [newName, setNewName] = useState('');
   const [newAddress, setNewAddress] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [entryType, setEntryType] = useState<'address' | 'manual'>('address');
   const [manualAmount, setManualAmount] = useState('');
   const [manualReason, setManualReason] = useState('');
+
+  // Listen for selected token changes
+  useEffect(() => {
+    const handleTokenChange = (event: CustomEvent) => {
+      console.log('🔄 AddressManager: Token changed to:', event.detail.symbol);
+      setSelectedToken(event.detail);
+    };
+
+    window.addEventListener('selected-token-changed', handleTokenChange as EventListener);
+    return () => window.removeEventListener('selected-token-changed', handleTokenChange as EventListener);
+  }, []);
 
   const handleAddAddress = () => {
     if (!newName.trim() || !newAddress.trim()) {
@@ -173,6 +280,9 @@ export const AddressManager = () => {
         <div className="flex items-center gap-2">
           <Settings className="w-5 h-5 text-order-green" />
           <h3 className="text-sm font-bold text-foreground">Dolaşım Dışı Adresler</h3>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            {selectedToken.symbol}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
@@ -222,7 +332,7 @@ export const AddressManager = () => {
                   ) : (
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <p className="font-semibold text-order-green">
-                        {addr.manualAmount?.toLocaleString('tr-TR')} ORDER
+                        {addr.manualAmount?.toLocaleString('tr-TR')} {selectedToken.symbol}
                       </p>
                       <p className="truncate italic">{addr.reason}</p>
                     </div>

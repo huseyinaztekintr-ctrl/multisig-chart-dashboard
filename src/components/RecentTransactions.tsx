@@ -2,12 +2,10 @@ import { useEffect, useState, memo, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { ArrowDownLeft, ArrowUpRight, Activity, Bell } from 'lucide-react';
 import { getEnabledAddresses } from './AddressManager';
-import { fetchDexScreenerPrice, getProvider } from '@/utils/blockchain';
+import { fetchDexScreenerPrice, fetchDexScreenerPriceByToken, getProvider } from '@/utils/blockchain';
 import { getRecentLogsChunked } from '@/utils/ethLogs';
 import { ethers } from 'ethers';
-
-const ORDER_TOKEN = '0x1BEd077195307229FcCBC719C5f2ce6416A58180';
-const ORDER_PAIR = '0x5147fff4794fd96c1b0e64dcca921ca0ee1cda8d';
+import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
 // ERC20 Transfer event topic
 const TRANSFER_TOPIC = ethers.id('Transfer(address,address,uint256)');
@@ -23,12 +21,23 @@ interface Transfer {
 }
 
 const RecentTransactionsComponent = () => {
+  const [selectedToken, setSelectedToken] = useState(() => getCurrentSelectedToken());
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [nonCirculatingAddresses, setNonCirculatingAddresses] = useState<Set<string>>(new Set());
   const [newTransferIds, setNewTransferIds] = useState<Set<string>>(new Set());
-  const [orderPrice, setOrderPrice] = useState<number>(0);
+  const [tokenPrice, setTokenPrice] = useState<number>(0);
   const previousTransfersRef = useRef<string[]>([]);
+
+  // Listen for selected token changes
+  useEffect(() => {
+    const handleTokenChange = (event: CustomEvent) => {
+      setSelectedToken(event.detail);
+    };
+
+    window.addEventListener('selected-token-changed', handleTokenChange as EventListener);
+    return () => window.removeEventListener('selected-token-changed', handleTokenChange as EventListener);
+  }, []);
 
   useEffect(() => {
     const enabledAddresses = getEnabledAddresses();
@@ -41,14 +50,14 @@ const RecentTransactionsComponent = () => {
         // Try Routescan first
         const path = `/v2/network/mainnet/evm/43114/erc20-transfers`;
         const queryParams = new URLSearchParams({
-          tokenAddress: ORDER_TOKEN,
+          tokenAddress: selectedToken.address,
           limit: '10',
           count: 'true',
           path
         });
         
         const routescanUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? `https://api.routescan.io${path}?tokenAddress=${ORDER_TOKEN}&limit=10&count=true`
+          ? `https://api.routescan.io${path}?tokenAddress=${selectedToken.address}&limit=10&count=true`
           : `${window.location.origin}/.netlify/functions/routescan-proxy?${queryParams.toString()}`;
           
         let response = await fetch(routescanUrl);
@@ -63,7 +72,7 @@ const RecentTransactionsComponent = () => {
           const latest = await provider.getBlockNumber();
           const logs = await getRecentLogsChunked(
             provider,
-            { address: ORDER_TOKEN, topics: [TRANSFER_TOPIC] },
+            { address: selectedToken.address, topics: [TRANSFER_TOPIC] },
             { toBlock: latest, chunkSize: 2000, limit: 10, maxChunks: 60 }
           );
 
@@ -123,20 +132,22 @@ const RecentTransactionsComponent = () => {
       setLoading(false);
     };
 
-    const fetchOrderPrice = async () => {
+    const fetchTokenPrice = async () => {
       try {
-        const { price } = await fetchDexScreenerPrice(ORDER_PAIR);
-        setOrderPrice(price);
+        const tokenPriceData = selectedToken.pairAddress 
+          ? await fetchDexScreenerPrice(selectedToken.pairAddress)
+          : await fetchDexScreenerPriceByToken(selectedToken.address);
+        setTokenPrice(tokenPriceData.price);
       } catch (error) {
-        console.error('Error fetching ORDER price:', error);
+        console.error('Error fetching token price:', error);
       }
     };
 
     fetchTransfers();
-    fetchOrderPrice();
+    fetchTokenPrice();
     const interval = setInterval(() => {
       fetchTransfers();
-      fetchOrderPrice();
+      fetchTokenPrice();
     }, 45000); // Update every 45 seconds
 
 
@@ -150,7 +161,7 @@ const RecentTransactionsComponent = () => {
       clearInterval(interval);
       window.removeEventListener('addresses-updated', handleAddressUpdate);
     };
-  }, []);
+  }, [loading, selectedToken.address, selectedToken.pairAddress]);
 
   const getTransferType = (transfer: Transfer) => {
     const fromLower = transfer.from.toLowerCase();
@@ -177,7 +188,7 @@ const RecentTransactionsComponent = () => {
     try {
       // Support both decimal strings and hex (0x...) values
       const numAmount = amount?.startsWith('0x')
-        ? Number(ethers.formatUnits(amount as any, 18))
+        ? Number(ethers.formatUnits(amount, 18))
         : parseFloat(amount) / 1e18;
 
       if (isNaN(numAmount)) return '0';
@@ -225,7 +236,7 @@ const RecentTransactionsComponent = () => {
     <Card className="p-5 gradient-card border-primary/30 glow-order h-full flex flex-col min-h-[400px]">
       <div className="flex items-center gap-2 mb-4">
         <Activity className="w-6 h-6 text-order-green animate-pulse-slow" />
-        <h2 className="text-lg font-bold text-foreground">Son Transferler</h2>
+        <h2 className="text-lg font-bold text-foreground">Son {selectedToken.symbol} Transferleri</h2>
       </div>
 
       {loading ? (
@@ -288,14 +299,14 @@ const RecentTransactionsComponent = () => {
                 <div className="mt-2 text-right">
                   <div className="flex flex-col items-end gap-0.5">
                     <span className="text-sm font-bold text-order-green">
-                      {formatAmount(transfer.amount)} ORDER
+                      {formatAmount(transfer.amount)} {selectedToken.symbol}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {(() => {
                         const num = transfer.amount?.startsWith('0x')
-                          ? Number(ethers.formatUnits(transfer.amount as any, 18))
+                          ? Number(ethers.formatUnits(transfer.amount, 18))
                           : parseFloat(transfer.amount) / 1e18;
-                        return (num * orderPrice).toLocaleString('tr-TR', {
+                        return (num * tokenPrice).toLocaleString('tr-TR', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 6,
                         });
