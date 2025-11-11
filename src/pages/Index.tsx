@@ -17,6 +17,7 @@ import { DebtBalance } from '@/components/DebtBalance';
 import { SwapBot } from '@/components/SwapBot';
 import { AirdropCard } from '@/components/AirdropCard';
 import { MultisigTokenSelector } from '@/components/MultisigTokenSelector';
+import { LiveClock } from '@/components/LiveClock';
 import { useSelectedToken } from '@/hooks/useSelectedToken';
 import { useEffect } from 'react';
 
@@ -52,6 +53,10 @@ const Index = () => {
                   {selectedToken.symbol} Multisig
                 </h1>
                 <p className="text-[10px] text-order-green/70 font-medium whitespace-nowrap">⚡ Yönetişim Paneli</p>
+                {/* Live Clock */}
+                <div className="mt-1">
+                  <LiveClock />
+                </div>
               </div>
             </div>
 
