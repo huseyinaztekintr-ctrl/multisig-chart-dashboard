@@ -1,6 +1,6 @@
 import { PriceFeed } from '@/components/PriceFeed';
 import { CurrencyFeed } from '@/components/CurrencyFeed';
-import { CirculatingSupplyCard } from '@/components/CirculatingSupplyCard';
+import { CirculatingSupplyComparison } from '@/components/CirculatingSupplyComparison';
 import { MultisigHoldings } from '@/components/MultisigHoldings';
 import { ComparativeAnalysis } from '@/components/ComparativeAnalysis';
 import { AddressManager } from '@/components/AddressManager';
@@ -179,7 +179,7 @@ const Index = () => {
 
           {/* Center Column */}
           <div className="col-span-12 lg:col-span-5 flex flex-col gap-4 lg:overflow-y-auto">
-            <CirculatingSupplyCard />
+            <CirculatingSupplyComparison />
             <PositionNotes />
             <DebtBalance />
             
