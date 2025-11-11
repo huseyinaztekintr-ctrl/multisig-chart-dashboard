@@ -119,7 +119,9 @@ SwapBot 1440 ayarlı 60 saniye ayarlı Wavax ayarlı.
 2K WAVAX,USDC,ARENA farketmez, AnaMultisig'e OrderBuyBack.
 Bu değer : bir sonraki kazanç aşamasına kadar bölünür en az değer 2K AVAX , en fazla süre 90 Gün.
 
-Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
+Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
+
+İlk Buyback > 30-40k usd ile tek kalemde yapılır arz çok fazla var lp de.`,
         hasAlarm: false,
         createdAt: new Date().toISOString(),
       });
@@ -162,37 +164,32 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.`,
       defaultNotes.push({
         id: 'default-arena',
         title: 'ARENA Trading Strategy',
-        content: `ARENA Token Stratejisi:
+        content: `ORDER Foundation Bütçesi Trading Strategy:
 
-🎯 TEMEL STRATEJİ:
-• Uzun vadeli hodl pozisyonu
-• DCA (Dollar Cost Average) ile sürekli alım
-• Market volatilitesinden faydalanma
-• Gaming sektörü büyümesine yatırım
+💰 ARENA HOLDİNGS:
+• 1.000.000 ARENA Multisig'de!
+• 4h MACRSS'de buy veya sell - ince yeşil ve kırmızı çizgide
 
-📈 ALIM STRATEJİSİ:
-• Günlük SwapBot ile otomatik alım
-• Fiyat düşüşlerinde ekstra alım fırsatları
-• Teknik analiz sinyallerine göre pozisyon artırma
-• Support seviyelerinde agresif alım
+� ÇALIŞMA SİSTEMİ:
+• 4h MACRSS Sell verdi → 1M Arena Swap Stablecoin → Deposit AAVE
+• 4h MACRSS Buy verdi → Stablecoin Swap ARENA → 1M+ Arena'ya sahip
+• 4h MACRSS tekrar SELL → ARENA Swap Stablecoin → AAVE DEPOSIT
 
-💎 HODL FELSEFESİ:
-• Gaming NFT ve metaverse trend'ine inanç
-• ARENA ecosystem gelişimi takibi
-• Uzun vadeli değer artışı beklentisi
-• Spekülatif alım satımdan kaçınma
+� ARENA DAĞILIM PLANI:
+• 1.000.000 ARENA → ORDER Foundation Trade
+• 500.000 ARENA → Borç ve erken faiz bütçesi
+• 1.000.000 ARENA → EV, ARABA, StableFaiz, TRY Faiz sistemi
 
-⚠️ RİSK YÖNETİMİ:
-• Portföy çeşitlendirmesi
-• Stop-loss seviyelerinin belirlenmesi
-• Market sentiment takibi
-• Likidite durumu monitörü
+💡 ÖNEMLİ NOTLAR:
+• Başlangıçta 1,2M ARENA'nın üzerinde SwapBot bütçesi ayrımı
+• ARENA'dan kar ettikten sonra farklar buyback'dir
+• 4h MACRSS bazen BTC.b ile de takas düşünülebilir
+• Döngü sürekli devam eder
 
-🔄 REBALANCİNG:
-• Aylık portföy değerlendirmesi
-• Kar realizasyonu kuralları
-• Pozisyon büyüklüğü ayarlaması
-• Risk/ödül oranı optimizasyonu`,
+🎯 TEMEL HEDEFLER:
+1. Multisig sirkülasyondaki ORDER'in en az 4x MarketCap değerinde olmalı
+2. Üzerinde oldukça eldeki ORDER satılmaz, altına düştükçe satılır
+3. Trade farklarının bir kısmı ile sürekli buyback yapılır`,
         hasAlarm: false,
         createdAt: new Date().toISOString(),
       });
