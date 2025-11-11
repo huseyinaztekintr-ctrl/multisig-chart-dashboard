@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RefreshCw, ChevronDown, Play, Square, Eye, EyeOff, Lock, Unlock, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { ethers } from 'ethers';
+import { getProvider } from '@/utils/blockchain';
 import { getEnabledTokens } from './TokenManager';
 import { getEnabledWallets, type MultisigWallet } from './WalletManager';
 import CryptoJS from 'crypto-js';
@@ -146,7 +147,7 @@ export const SwapBot = () => {
 
     try {
       setIsLoadingBalances(true);
-      const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
       const wallet = new ethers.Wallet(config.privateKeys[0], provider);
       
       const tokenXContract = new ethers.Contract(config.tokenXAddress, ERC20_ABI, provider);
@@ -180,7 +181,7 @@ export const SwapBot = () => {
   useEffect(() => {
     const checkGasPrice = async () => {
       try {
-        const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
         const feeData = await provider.getFeeData();
         if (feeData.gasPrice) {
           const gasPriceInNanoAvax = parseFloat(ethers.formatUnits(feeData.gasPrice, 'gwei'));
@@ -466,7 +467,7 @@ export const SwapBot = () => {
       }
 
       const currentKey = config.privateKeys[keyIndex];
-      const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
       const wallet = new ethers.Wallet(currentKey, provider);
       
       console.log(`🔑 Swap için cüzdan #${keyIndex + 1} kullanılıyor:`, wallet.address.slice(0, 10) + '...');

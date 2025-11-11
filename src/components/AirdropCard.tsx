@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChevronDown, Send, Copy, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { ethers } from 'ethers';
+import { getProvider } from '@/utils/blockchain';
 import { getEnabledTokens } from './TokenManager';
 import { getEnabledWallets } from './WalletManager';
 import CryptoJS from 'crypto-js';
@@ -150,7 +151,7 @@ export const AirdropCard = () => {
 
     setIsFetchingBalance(true);
     try {
-      const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
       const sourceAddress = wallets[selectedSourceIndex].address;
 
       if (selectedTokenAddress === 'NATIVE') {
@@ -214,7 +215,7 @@ export const AirdropCard = () => {
     setIsAirdropping(true);
 
     try {
-      const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
       const sourceWallet = new ethers.Wallet(wallets[selectedSourceIndex].privateKey, provider);
 
       if (selectedTokenAddress === 'NATIVE') {
@@ -266,7 +267,7 @@ export const AirdropCard = () => {
     setIsAirdropping(true);
 
     try {
-      const provider = new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+  const provider = getProvider();
       const sourceWallet = new ethers.Wallet(wallets[selectedSourceIndex].privateKey, provider);
       const targetWallets = wallets.filter((_, index) => index !== selectedSourceIndex);
 

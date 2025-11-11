@@ -1,6 +1,8 @@
 import { ethers } from 'ethers';
 
-const AVALANCHE_RPC = 'https://api.avax.network/ext/bc/C/rpc';
+// Prefer a Vite env var (VITE_AVALANCHE_RPC) or a serverless proxy endpoint to avoid CORS and rate limits.
+// In production, set VITE_AVALANCHE_RPC to a provider URL (QuickNode/Chainstack) in Netlify environment.
+const AVALANCHE_RPC = import.meta.env.VITE_AVALANCHE_RPC || '/.netlify/functions/avalanche-rpc';
 const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
   'function decimals() view returns (uint8)',
