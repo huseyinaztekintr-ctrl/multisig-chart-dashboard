@@ -1,0 +1,75 @@
+headersOrigin = "config"
+redirectsOrigin = "config"
+plugins = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "D:\\AAAAAAAAAAAAAAAAAA\\forkingvorking-83493-b1be7bb0-main\\dist"
+publishOrigin = "ui"
+commandOrigin = "ui"
+command = "npm run build"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+for = "/sw.js"
+
+[headers.values]
+Content-Type = "application/javascript"
+Cache-Control = "no-cache"
+
+[[headers]]
+for = "/sw.js"
+
+[headers.values]
+Content-Type = "application/javascript; charset=utf-8"
+Cache-Control = "no-cache"
+
+[[headers]]
+for = "/manifest.webmanifest"
+
+[headers.values]
+Content-Type = "application/manifest+json"
+Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+for = "/*.png"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

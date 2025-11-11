@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
+
+    --card: 220 40% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 40% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 158 88% 45%;
+    --primary-foreground: 220 47% 8%;
+
+    --secondary: 220 70% 50%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 220 30% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 158 88% 45%;
+    --accent-foreground: 220 47% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 158 88% 45%;
+
+    --radius: 0.75rem;
+
+    --order-green: 158 88% 45%;
+    --order-green-glow: 158 88% 60%;
+    --corporate-blue: 220 70% 50%;
+    --corporate-blue-dark: 220 70% 35%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(158 88% 45%) 0%, hsl(158 88% 35%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 70% 50%) 0%, hsl(220 70% 35%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 40% 10%) 0%, hsl(220 40% 6%) 100%);
+    
+    --glow-order: 0 0 40px hsla(158 88% 45% / 0.15), 0 0 80px hsla(158 88% 45% / 0.08);
+    --glow-blue: 0 0 40px hsla(220 70% 50% / 0.15), 0 0 80px hsla(220 70% 50% / 0.08);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Custom Scrollbar Styles */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--order-green) / 0.3) hsl(var(--background));
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--order-green) / 0.3);
+    border-radius: 4px;
+    border: 2px solid hsl(var(--background));
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--order-green) / 0.5);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--order-green) / 0.7);
+  }
+
+  /* Corporate Blue variant for specific elements */
+  .scrollbar-blue {
+    scrollbar-color: hsl(var(--corporate-blue) / 0.3) hsl(var(--background));
+  }
+
+  .scrollbar-blue::-webkit-scrollbar-thumb {
+    background: hsl(var(--corporate-blue) / 0.3);
+  }
+
+  .scrollbar-blue::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--corporate-blue) / 0.5);
+  }
+
+  .scrollbar-blue::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--corporate-blue) / 0.7);
+  }
+}
+
+@layer utilities {
+  .glow-order {
+    box-shadow: var(--glow-order);
+  }
+  
+  .glow-blue {
+    box-shadow: var(--glow-blue);
+  }
+  
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 30px hsla(158 88% 45% / 0.1), 0 0 60px hsla(158 88% 45% / 0.05);
+    }
+    to {
+      box-shadow: 0 0 40px hsla(158 88% 45% / 0.2), 0 0 80px hsla(158 88% 45% / 0.1);
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
