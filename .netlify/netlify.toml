@@ -1,16 +1,15 @@
+functionsDirectory = "D:\\AAAAAAAAAAAAAAAAAA\\forkingvorking-83493-b1be7bb0-main\\netlify\\functions"
+functionsDirectoryOrigin = "default"
 headersOrigin = "config"
 redirectsOrigin = "config"
 plugins = []
-
-[functions]
-
-[functions."*"]
 
 [build]
 publish = "D:\\AAAAAAAAAAAAAAAAAA\\forkingvorking-83493-b1be7bb0-main\\dist"
 publishOrigin = "ui"
 commandOrigin = "ui"
 command = "npm run build"
+functions = "D:\\AAAAAAAAAAAAAAAAAA\\forkingvorking-83493-b1be7bb0-main\\netlify\\functions"
 
 [build.environment]
 
@@ -25,6 +24,10 @@ command = "npm run build"
 [build.processing.js]
 
 [build.services]
+
+[functions]
+
+[functions."*"]
 
 [[headers]]
 for = "/*"

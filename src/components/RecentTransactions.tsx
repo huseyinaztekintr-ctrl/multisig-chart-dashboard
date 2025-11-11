@@ -39,9 +39,19 @@ const RecentTransactionsComponent = () => {
     const fetchTransfers = async () => {
       try {
         // Try Routescan first
-        let response = await fetch(
-          `https://api.routescan.io/v2/network/mainnet/evm/43114/erc20-transfers?tokenAddress=${ORDER_TOKEN}&limit=10&count=true`
-        );
+        const path = `/v2/network/mainnet/evm/43114/erc20-transfers`;
+        const queryParams = new URLSearchParams({
+          tokenAddress: ORDER_TOKEN,
+          limit: '10',
+          count: 'true',
+          path
+        });
+        
+        const routescanUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? `https://api.routescan.io${path}?tokenAddress=${ORDER_TOKEN}&limit=10&count=true`
+          : `${window.location.origin}/.netlify/functions/routescan-proxy?${queryParams.toString()}`;
+          
+        let response = await fetch(routescanUrl);
         
         let data: any;
         let newTransfers: any[] = [];

@@ -44,9 +44,21 @@ export const MultisigLastActivity = () => {
         wallets.map(async (wallet) => {
           try {
             // Try Routescan API first
-            let response = await fetch(
-              `https://api.routescan.io/v2/network/mainnet/evm/43114/transactions?fromAddresses=${wallet.address}&toAddresses=${wallet.address}&sort=desc&limit=1&count=true`
-            );
+            const path = `/v2/network/mainnet/evm/43114/transactions`;
+            const queryParams = new URLSearchParams({
+              fromAddresses: wallet.address,
+              toAddresses: wallet.address,
+              sort: 'desc',
+              limit: '1',
+              count: 'true',
+              path
+            });
+            
+            const routescanUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+              ? `https://api.routescan.io${path}?fromAddresses=${wallet.address}&toAddresses=${wallet.address}&sort=desc&limit=1&count=true`
+              : `${window.location.origin}/.netlify/functions/routescan-proxy?${queryParams.toString()}`;
+              
+            let response = await fetch(routescanUrl);
             
             let data: any;
             // If Routescan fails or rate limited, fallback to Avalanche Public RPC

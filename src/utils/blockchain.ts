@@ -2,7 +2,24 @@ import { ethers } from 'ethers';
 
 // Prefer a Vite env var (VITE_AVALANCHE_RPC) or a serverless proxy endpoint to avoid CORS and rate limits.
 // In production, set VITE_AVALANCHE_RPC to a provider URL (QuickNode/Chainstack) in Netlify environment.
-const AVALANCHE_RPC = import.meta.env.VITE_AVALANCHE_RPC || '/.netlify/functions/avalanche-rpc';
+const getAvalancheRpcUrl = () => {
+  // If we have an explicit RPC URL via env var, use it
+  if (import.meta.env.VITE_AVALANCHE_RPC) {
+    return import.meta.env.VITE_AVALANCHE_RPC;
+  }
+  
+  // Otherwise use our Netlify function proxy
+  const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  
+  if (isProduction) {
+    return `${window.location.origin}/.netlify/functions/avalanche-rpc`;
+  } else {
+    // In development, fall back to public RPC (or you can run netlify dev)
+    return 'https://api.avax.network/ext/bc/C/rpc';
+  }
+};
+
+const AVALANCHE_RPC = getAvalancheRpcUrl();
 const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
   'function decimals() view returns (uint8)',
@@ -88,9 +105,19 @@ export const fetchUSDTRYRate = async (): Promise<number> => {
 
 export const fetchHolderCount = async (tokenAddress: string): Promise<number> => {
   try {
-    const response = await fetch(
-      `https://api.routescan.io/v2/network/mainnet/evm/43114/erc20/${tokenAddress}/holders?count=true&limit=1`
-    );
+    // Build proxy URL for RoutesScan API
+    const path = `/v2/network/mainnet/evm/43114/erc20/${tokenAddress}/holders`;
+    const queryParams = new URLSearchParams({ 
+      count: 'true', 
+      limit: '1',
+      path
+    });
+    
+    const proxyUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? `https://api.routescan.io${path}?count=true&limit=1`  // Direct call in dev
+      : `${window.location.origin}/.netlify/functions/routescan-proxy?${queryParams.toString()}`;
+      
+    const response = await fetch(proxyUrl);
     const data = await response.json();
     return data.total || 0;
   } catch (error) {
