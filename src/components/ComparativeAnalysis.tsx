@@ -252,7 +252,7 @@ const ComparativeAnalysisComponent = () => {
                 : 'bg-destructive/10 border-destructive/30 ring-2 ring-destructive shadow-[0_0_20px_rgba(239,68,68,0.4)]'
             }`}>
               <p className="text-xs text-muted-foreground mb-1">Dolaşımdaki {selectedToken.symbol}</p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-1">
                   <span className={`font-bold text-xs ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-destructive'}`}>$</span>
                   <p className={`text-sm font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-destructive'}`}>
@@ -263,42 +263,42 @@ const ComparativeAnalysisComponent = () => {
                   </span>
                 </div>
                 {/* Crypto values in 2x2 grid to save space */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <div className="flex items-center gap-1">
+                <div className="grid grid-cols-2 gap-0.5 text-[10px]">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.circulatingValueAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.circulatingValueBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.circulatingValueArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src={selectedToken.logo} 
                       alt={selectedToken.symbol} 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate font-medium">
                       {data.circulatingValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -313,7 +313,7 @@ const ComparativeAnalysisComponent = () => {
                 : 'bg-order-green/10 border-order-green/30 ring-2 ring-order-green shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             }`}>
               <p className="text-xs text-muted-foreground mb-1">Multisig Toplam</p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-1">
                   <span className={`font-bold text-xs ${data.isCirculatingLeading ? 'text-destructive' : 'text-order-green'}`}>$</span>
                   <p className={`text-sm font-bold ${data.isCirculatingLeading ? 'text-destructive' : 'text-order-green'}`}>
@@ -332,42 +332,42 @@ const ComparativeAnalysisComponent = () => {
                   </div>
                 )}
                 {/* Crypto values in 2x2 grid to save space */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <div className="flex items-center gap-1">
+                <div className="grid grid-cols-2 gap-0.5 text-[10px]">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.multisigTotalValueAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.multisigTotalValueBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.multisigTotalValueArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
                       alt="ORDER" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate font-medium">
                       {data.multisigTotalValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -390,7 +390,7 @@ const ComparativeAnalysisComponent = () => {
                 </span>
                 <TrendingUp className={`w-3 h-3 ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`} />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-1">
                   <span className={`font-bold text-xs ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>$</span>
                   <p className={`text-base font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>
@@ -401,42 +401,42 @@ const ComparativeAnalysisComponent = () => {
                   </span>
                 </div>
                 {/* Difference values in 2x2 grid to save space */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <div className="flex items-center gap-1">
+                <div className="grid grid-cols-2 gap-0.5 text-[10px]">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.differenceAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.differenceBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.differenceArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
                       alt="ORDER" 
-                      className="w-2.5 h-2.5"
+                      className="w-2 h-2"
                     />
                     <span className="text-muted-foreground truncate font-medium">
                       {data.differenceOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
