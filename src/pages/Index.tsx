@@ -70,7 +70,7 @@ const Index = () => {
                   name="Bitcoin"
                   symbol="BTC"
                   pairAddress="0x856b38bf1e2e367f747dd4d3951dda8a35f1bf60"
-                  logo="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw"
+                  logo="https://cryptologos.cc/logos/bitcoin-btc-logo.png"
                 />
               </div>
               <div className="flex-1 min-w-[140px]">
@@ -121,7 +121,7 @@ const Index = () => {
                   name="Dai Stablecoin"
                   symbol="DAI.e"
                   pairAddress="0x2f1DA4bafd5f2508EC2e2E425036063A374993B6"
-                  logo="https://imgproxy-mainnet.routescan.io/KXBq5ADiOubzvjufqEJxvwpBmeoVsRnyuGnAz2ImGTo/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvREFJLjE1NjZhZDBiOWJiNi5wbmc"
+                  logo="https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png"
                   isTokenAddress={false}
                 />
               </div>
@@ -139,7 +139,7 @@ const Index = () => {
                   name="Euro Coin"
                   symbol="EURC"
                   pairAddress="0xcD4f57d6B160B4ef2DFb78Ad1c76Cc4242EDB4CE"
-                  logo="https://imgproxy-mainnet.routescan.io/MS8AU1mCVjdR9AeyiIdTJG_0PvIrnAKwi695D8XAzR4/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvY2lyY2xlZXVyY29pbnNud18zMi5iOTFlMzMyNGZiNTMucG5n"
+                  logo="https://assets.coingecko.com/coins/images/26045/standard/euro-coin.png"
                   isTokenAddress={false}
                 />
               </div>
