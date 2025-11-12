@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getTokenBalance, fetchDexScreenerPrice, fetchDexScreenerPriceByToken } from '@/utils/blockchain';
 import { getEnabledAddresses, getManualEntries } from './AddressManager';
 import { getEnabledTokens } from './TokenManager';
-import { StrategyTable } from './StrategyTable';
 import { getEnabledWallets } from './WalletManager';
 import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
@@ -458,18 +457,7 @@ const ComparativeAnalysisComponent = () => {
             </div>
           </div>
 
-          <div className="p-2 bg-corporate-blue/10 rounded border border-corporate-blue/30">
-            <h4 className="font-semibold text-xs text-foreground mb-1">Alınan Arzın Akıbeti</h4>
-            <p className="text-xs text-muted-foreground">
-              ORDER'in açık arzı market değeridir. Multisig'de o değer kadar stabil coin bulunur. 
-              4h mAcrss'a göre WAVAX-USDC Trade edilerek MarketCap değişir.
-            </p>
-          </div>
 
-          {/* Strategy Table inside card */}
-          <div className="mt-4">
-            <StrategyTable />
-          </div>
         </div>
       )}
       </Card>

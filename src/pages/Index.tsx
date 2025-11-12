@@ -18,11 +18,16 @@ import { SwapBot } from '@/components/SwapBot';
 import { AirdropCard } from '@/components/AirdropCard';
 import { MultisigTokenSelector } from '@/components/MultisigTokenSelector';
 import { LiveClock } from '@/components/LiveClock';
+import { StrategyTable } from '@/components/StrategyTable';
 import { useSelectedToken } from '@/hooks/useSelectedToken';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Index = () => {
   const { selectedToken } = useSelectedToken();
+  const [showStrategies, setShowStrategies] = useState(false);
 
   // Update document title based on selected token
   useEffect(() => {
@@ -216,6 +221,39 @@ const Index = () => {
           </div>
         </div>
       </main>
+
+      {/* Floating Strategies Button */}
+      <Button
+        onClick={() => setShowStrategies(true)}
+        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-corporate-blue to-blue-600 hover:from-corporate-blue/90 hover:to-blue-600/90 text-white shadow-lg shadow-corporate-blue/30 rounded-full w-14 h-14 p-0"
+        title="Stratejiler"
+      >
+        <TrendingUp className="w-6 h-6" />
+      </Button>
+
+      {/* Strategies Dialog */}
+      <Dialog open={showStrategies} onOpenChange={setShowStrategies}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-corporate-blue" />
+              Alınan Arzın Akıbeti ve Stratejiler
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-corporate-blue/10 rounded-lg border border-corporate-blue/30">
+              <h4 className="font-semibold text-sm text-foreground mb-2">Alınan Arzın Akıbeti</h4>
+              <p className="text-sm text-muted-foreground">
+                ORDER'in açık arzı market değeridir. Multisig'de o değer kadar stabil coin bulunur. 
+                4h mAcrss'a göre WAVAX-USDC Trade edilerek MarketCap değişir.
+              </p>
+            </div>
+            
+            <StrategyTable />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Compact Footer */}
       <footer className="border-t border-border/50 py-2 flex-shrink-0">
