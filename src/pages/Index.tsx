@@ -175,7 +175,10 @@ const Index = () => {
           </div>
 
           {/* Left Column */}
-          <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto">
+          <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto lg:max-h-screen">
+            {/* Multisig Last Activity */}
+            <MultisigLastActivity />
+            
             {/* Wallet Manager */}
             <WalletManager />
             
@@ -215,7 +218,6 @@ const Index = () => {
 
           {/* Right Column */}
           <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 lg:overflow-y-auto">
-            <MultisigLastActivity />
             <ComparativeAnalysis />
             <PnLTracker />
             <AAVEIncomeDistribution />
