@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchExchangeRates, formatCurrency } from '@/utils/currency';
 
 const NOTES_STORAGE_KEY = 'order-position-notes';
 const ALARMS_STORAGE_KEY = 'order-position-alarms';
@@ -67,6 +68,7 @@ export const PositionNotes = () => {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [pnlPositions, setPnlPositions] = useState<PnLPosition[]>([]);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
+  const [usdToTryRate, setUsdToTryRate] = useState<number>(0);
   const [showAlarmForm, setShowAlarmForm] = useState(false);
   const [showPnlForm, setShowPnlForm] = useState(false);
   
@@ -297,6 +299,22 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
         console.error('Error loading P&L positions:', e);
       }
     }
+  }, []);
+
+  // Fetch TRY exchange rate
+  useEffect(() => {
+    const fetchTryRate = async () => {
+      try {
+        const rate = await fetchExchangeRates();
+        setUsdToTryRate(rate);
+      } catch (error) {
+        console.error('Error fetching TRY rate:', error);
+      }
+    };
+
+    fetchTryRate();
+    const interval = setInterval(fetchTryRate, 300000); // Update every 5 minutes
+    return () => clearInterval(interval);
   }, []);
 
   // Check alarms periodically
@@ -1617,9 +1635,16 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
                                             <TrendingDown className="w-4 h-4 text-red-500" />
                                           )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
-                                          Mevcut Değer: ${currentValue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                        </p>
+                                        <div className="space-y-0.5">
+                                          <p className="text-xs text-muted-foreground">
+                                            Mevcut Değer: ${currentValue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                                          </p>
+                                          {usdToTryRate > 0 && (
+                                            <p className={`text-xs ${isProfit ? 'text-order-green' : 'text-red-500'}/80`}>
+                                              TRY: {formatCurrency(unrealizedPnL * usdToTryRate, 'TRY')}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
                                       
                                       <div className="space-y-1">
@@ -1632,6 +1657,11 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
                                             (+{expectedPercent.toFixed(2)}%)
                                           </p>
                                         </div>
+                                        {usdToTryRate > 0 && (
+                                          <p className="text-xs text-order-green/80">
+                                            TRY: +{formatCurrency(expectedProfit * usdToTryRate, 'TRY')}
+                                          </p>
+                                        )}
                                         <div className="w-full bg-muted rounded-full h-2 mt-1">
                                           <div 
                                             className={`h-2 rounded-full transition-all duration-500 ${
