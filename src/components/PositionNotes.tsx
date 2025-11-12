@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Save, Trash2, ChevronDown, Bell, Plus, X, TrendingUp, TrendingDown, Calendar, PartyPopper, Edit } from 'lucide-react';
+import { BookOpen, Save, Trash2, ChevronDown, Bell, Plus, X, Calendar, PartyPopper, Edit, TrendingUp, TrendingDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -13,11 +13,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchExchangeRates, formatCurrency } from '@/utils/currency';
+import { fetchExchangeRates } from '@/utils/currency';
 
 const NOTES_STORAGE_KEY = 'order-position-notes';
 const ALARMS_STORAGE_KEY = 'order-position-alarms';
-const PNL_POSITIONS_STORAGE_KEY = 'order-pnl-positions';
 
 interface Note {
   id: string;
@@ -45,32 +44,14 @@ interface Alarm {
   currency?: 'usd' | 'wavax';
 }
 
-interface PnLPosition {
-  id: string;
-  tokenSymbol: string;
-  tokenAddress: string;
-  tokenPairAddress?: string;
-  tokenLogo: string;
-  quantity: number;
-  entryPrice: number;
-  sellTarget: number;
-  createdAt: string;
-  notes?: string;
-  currentPrice?: number;
-  lastUpdated?: string;
-  targetReached?: boolean;
-}
-
 export const PositionNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const [alarms, setAlarms] = useState<Alarm[]>([]);
-  const [pnlPositions, setPnlPositions] = useState<PnLPosition[]>([]);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [usdToTryRate, setUsdToTryRate] = useState<number>(0);
   const [showAlarmForm, setShowAlarmForm] = useState(false);
-  const [showPnlForm, setShowPnlForm] = useState(false);
   
   // Alarm form states
   const [alarmType, setAlarmType] = useState<'price' | 'date'>('price');
@@ -82,13 +63,6 @@ export const PositionNotes = () => {
   const [useMarketValue, setUseMarketValue] = useState(false);
   const [supply, setSupply] = useState('');
   const [currency, setCurrency] = useState<'usd' | 'wavax'>('usd');
-  
-  // P&L form states
-  const [pnlTokenSymbol, setPnlTokenSymbol] = useState('');
-  const [pnlQuantity, setPnlQuantity] = useState('');
-  const [pnlEntryPrice, setPnlEntryPrice] = useState('');
-  const [pnlSellTarget, setPnlSellTarget] = useState('');
-  const [pnlNotes, setPnlNotes] = useState('');
   
   // Note form states
   const [noteTitle, setNoteTitle] = useState('');
@@ -289,16 +263,6 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
         console.error('Error loading alarms:', e);
       }
     }
-
-    // Load P&L positions
-    const savedPnlPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
-    if (savedPnlPositions) {
-      try {
-        setPnlPositions(JSON.parse(savedPnlPositions));
-      } catch (e) {
-        console.error('Error loading P&L positions:', e);
-      }
-    }
   }, [activeNoteId]);
 
   // Fetch TRY exchange rate
@@ -419,81 +383,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alarms]);
 
-  // Check P&L positions for sell target alerts
-  useEffect(() => {
-    const checkPnlAlerts = async () => {
-      if (pnlPositions.length === 0) return;
 
-      const updatedPositions = [...pnlPositions];
-      let hasUpdates = false;
-
-      for (let i = 0; i < updatedPositions.length; i++) {
-        const position = updatedPositions[i];
-        if (position.targetReached) continue;
-
-        try {
-          let tokenPrice = 0;
-          
-          if (position.tokenSymbol === 'BTC.b') {
-            const btcPairAddress = '0x856b38Bf1e2E367F747DD4d3951DDA8a35F1bF60';
-            const btcPriceData = await fetchDexScreenerPrice(btcPairAddress);
-            tokenPrice = btcPriceData.price;
-          } else if (position.tokenSymbol === 'USDC' || position.tokenSymbol === 'DAI.e' || position.tokenSymbol === 'GHO') {
-            tokenPrice = 1;
-          } else if (position.tokenPairAddress) {
-            const priceData = await fetchDexScreenerPrice(position.tokenPairAddress);
-            tokenPrice = priceData.price;
-          }
-          
-          if (tokenPrice === 0) continue;
-
-          // Update current price
-          updatedPositions[i].currentPrice = tokenPrice;
-          updatedPositions[i].lastUpdated = new Date().toISOString();
-          hasUpdates = true;
-
-          // Check if sell target is reached
-          if (tokenPrice >= position.sellTarget) {
-            updatedPositions[i].targetReached = true;
-            
-            const profit = (position.sellTarget - position.entryPrice) * position.quantity;
-            const profitPercent = ((position.sellTarget / position.entryPrice) - 1) * 100;
-            
-            // Create a synthetic alarm object for notification
-            const pnlAlarm = {
-              id: `pnl-${position.id}`,
-              type: 'price' as const,
-              title: `🎯 ${position.tokenSymbol} Satış Hedefi Ulaşıldı!`,
-              tokenSymbol: position.tokenSymbol,
-              targetPrice: position.sellTarget,
-              condition: 'above' as const,
-              triggered: false,
-              createdAt: position.createdAt,
-            };
-
-            showNotification(
-              `🎯 ${position.tokenSymbol} HEDEF ULAŞILDI! 🚀`,
-              `Satış fiyatı $${tokenPrice.toFixed(6)} seviyesine ulaştı! Kar: $${profit.toFixed(2)} (${profitPercent.toFixed(2)}%)`,
-              pnlAlarm
-            );
-          }
-        } catch (e) {
-          console.error('Error checking P&L position:', e);
-        }
-      }
-
-      if (hasUpdates) {
-        setPnlPositions(updatedPositions);
-        localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-      }
-    };
-
-    const interval = setInterval(checkPnlAlerts, 30000); // Check every 30 seconds
-    checkPnlAlerts(); // Initial check
-
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pnlPositions]);
 
   // Listen for external alarm updates (from navbar dialog)
   useEffect(() => {
@@ -816,72 +706,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
   };
 
   // P&L Position Functions
-  const addPnlPosition = () => {
-    if (!pnlTokenSymbol || !pnlQuantity || !pnlEntryPrice || !pnlSellTarget) {
-      toast({
-        title: "Hata",
-        description: "Lütfen tüm zorunlu alanları doldurun",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    const tokens = getEnabledTokens();
-    const selectedTokenData = tokens.find(t => t.symbol === pnlTokenSymbol);
-    
-    if (!selectedTokenData) {
-      toast({
-        title: "Hata",
-        description: "Token bulunamadı",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newPosition: PnLPosition = {
-      id: Date.now().toString(),
-      tokenSymbol: pnlTokenSymbol,
-      tokenAddress: selectedTokenData.address,
-      tokenPairAddress: selectedTokenData.pairAddress,
-      tokenLogo: selectedTokenData.logo,
-      quantity: parseFloat(pnlQuantity),
-      entryPrice: parseFloat(pnlEntryPrice),
-      sellTarget: parseFloat(pnlSellTarget),
-      createdAt: new Date().toISOString(),
-      notes: pnlNotes || undefined,
-    };
-
-    const updatedPositions = [...pnlPositions, newPosition];
-    setPnlPositions(updatedPositions);
-    localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-
-    // Reset form
-    setPnlTokenSymbol('');
-    setPnlQuantity('');
-    setPnlEntryPrice('');
-    setPnlSellTarget('');
-    setPnlNotes('');
-    setShowPnlForm(false);
-
-    toast({
-      title: "Pozisyon eklendi",
-      description: `${pnlTokenSymbol} pozisyonu başarıyla eklendi`,
-    });
-  };
-
-  const deletePnlPosition = (id: string) => {
-    if (window.confirm('Bu pozisyonu silmek istediğinize emin misiniz?')) {
-      const updatedPositions = pnlPositions.filter(p => p.id !== id);
-      setPnlPositions(updatedPositions);
-      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-      
-      toast({
-        title: "Pozisyon silindi",
-        description: "Pozisyon başarıyla silindi",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <>
@@ -1094,9 +919,6 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
               </TabsTrigger>
               <TabsTrigger value="notes" className="text-xs">
                 📝 Notlar
-              </TabsTrigger>
-              <TabsTrigger value="pnl" className="text-xs">
-                📊 P&L Tracker
               </TabsTrigger>
             </TabsList>
 
@@ -1405,319 +1227,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
               </p>
             </TabsContent>
 
-            {/* P&L Tracker Tab */}
-            <TabsContent value="pnl" className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-order-green" />
-                  Profit & Loss Tracker
-                </h3>
-                <Button
-                  size="sm"
-                  onClick={() => setShowPnlForm(!showPnlForm)}
-                  className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Yeni Pozisyon
-                </Button>
-              </div>
 
-              {/* P&L Position Form */}
-              {showPnlForm && (
-                <div className="p-4 bg-gradient-to-br from-order-green/10 via-emerald-500/10 to-green-600/10 rounded-lg border border-order-green/20 space-y-3">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-order-green" />
-                    Yeni Pozisyon Ekle
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Token (Multisig Holdings)</Label>
-                      <Select value={pnlTokenSymbol} onValueChange={setPnlTokenSymbol}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Token seçin" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          {getEnabledTokens().map((token) => (
-                            <SelectItem key={token.symbol} value={token.symbol}>
-                              <div className="flex items-center gap-2">
-                                <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
-                                {token.symbol}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Adet</Label>
-                      <Input
-                        type="number"
-                        step="0.000001"
-                        value={pnlQuantity}
-                        onChange={(e) => setPnlQuantity(e.target.value)}
-                        placeholder="0.00"
-                        className="bg-background/50 border-order-green/30 focus:border-order-green"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Alım Fiyatı ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.000001"
-                        value={pnlEntryPrice}
-                        onChange={(e) => setPnlEntryPrice(e.target.value)}
-                        placeholder="0.00"
-                        className="bg-background/50 border-order-green/30 focus:border-order-green"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs">Satış Hedefi ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.000001"
-                        value={pnlSellTarget}
-                        onChange={(e) => setPnlSellTarget(e.target.value)}
-                        placeholder="0.00"
-                        className="bg-background/50 border-order-green/30 focus:border-order-green"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Notlar (İsteğe Bağlı)</Label>
-                    <Textarea
-                      value={pnlNotes}
-                      onChange={(e) => setPnlNotes(e.target.value)}
-                      placeholder="Bu pozisyon hakkında notlarınız..."
-                      className="bg-background/50 border-order-green/30 focus:border-order-green h-20"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button onClick={addPnlPosition} className="flex-1 bg-order-green hover:bg-order-green/90">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Pozisyon Ekle
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowPnlForm(false)} className="border-order-green/30 hover:bg-order-green/10">
-                      İptal
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* P&L Positions List */}
-              <div className="space-y-3">
-                {pnlPositions.length === 0 ? (
-                  <div className="text-center py-8 space-y-3">
-                    <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto opacity-50" />
-                    <p className="text-sm text-muted-foreground">
-                      Henüz pozisyon eklenmemiş
-                    </p>
-                    <Button
-                      onClick={() => setShowPnlForm(true)}
-                      className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      İlk Pozisyonunu Ekle
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {pnlPositions.map((position) => {
-                      const currentPrice = position.currentPrice || 0;
-                      const currentValue = position.quantity * currentPrice;
-                      const entryValue = position.quantity * position.entryPrice;
-                      const targetValue = position.quantity * position.sellTarget;
-                      const unrealizedPnL = currentValue - entryValue;
-                      const unrealizedPercent = currentPrice > 0 ? ((currentPrice / position.entryPrice) - 1) * 100 : 0;
-                      const expectedProfit = (position.sellTarget - position.entryPrice) * position.quantity;
-                      const expectedPercent = ((position.sellTarget / position.entryPrice) - 1) * 100;
-                      const isProfit = unrealizedPnL > 0;
-                      const isTargetReached = position.targetReached;
-                      
-                      return (
-                        <div
-                          key={position.id}
-                          className={`p-4 rounded-lg border transition-all group ${
-                            isTargetReached 
-                              ? 'bg-gradient-to-r from-order-green/20 to-emerald-500/20 border-order-green/50 shadow-lg shadow-order-green/20' 
-                              : 'bg-gradient-to-r from-background to-background/80 border-border/50 hover:border-order-green/30'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="relative">
-                                <img 
-                                  src={position.tokenLogo} 
-                                  alt={position.tokenSymbol}
-                                  className={`w-10 h-10 rounded-full ring-2 transition-all ${
-                                    isTargetReached 
-                                      ? 'ring-order-green/70 shadow-lg shadow-order-green/30' 
-                                      : 'ring-order-green/30 group-hover:ring-order-green/50'
-                                  }`}
-                                />
-                                <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background ${
-                                  isTargetReached ? 'bg-order-green animate-pulse' : 'bg-order-green'
-                                }`} />
-                                {isTargetReached && (
-                                  <div className="absolute -top-1 -left-1 w-4 h-4 bg-order-green rounded-full flex items-center justify-center">
-                                    <span className="text-xs text-white font-bold">🎯</span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-bold text-foreground text-lg">{position.tokenSymbol}</h4>
-                                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                                    {position.quantity.toLocaleString()} adet
-                                  </span>
-                                  {isTargetReached && (
-                                    <span className="text-xs font-bold text-order-green bg-order-green/10 px-2 py-1 rounded border border-order-green/30 animate-pulse">
-                                      🎯 HEDEF ULAŞILDI!
-                                    </span>
-                                  )}
-                                </div>
-                                
-                                {/* Current vs Entry Price */}
-                                <div className="grid grid-cols-3 gap-3 text-sm">
-                                  <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">Mevcut Fiyat</p>
-                                    <p className={`font-semibold ${currentPrice > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                      {currentPrice > 0 ? `$${currentPrice.toFixed(8)}` : 'Loading...'}
-                                    </p>
-                                    {position.lastUpdated && (
-                                      <p className="text-xs text-muted-foreground">
-                                        {new Date(position.lastUpdated).toLocaleTimeString('tr-TR')}
-                                      </p>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">Alım Fiyatı</p>
-                                    <p className="font-semibold text-corporate-blue">
-                                      ${position.entryPrice.toFixed(8)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Toplam: ${entryValue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                    </p>
-                                  </div>
-                                  
-                                  <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">Hedef Fiyat</p>
-                                    <p className="font-semibold text-order-green">
-                                      ${position.sellTarget.toFixed(8)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      Hedef: ${targetValue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                {/* P&L Section */}
-                                {currentPrice > 0 && (
-                                  <div className="pt-2 border-t border-border/30">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Gerçekleşmemiş K/Z</p>
-                                        <div className="flex items-center gap-2">
-                                          <p className={`font-bold text-lg ${isProfit ? 'text-order-green' : 'text-red-500'}`}>
-                                            {isProfit ? '+' : ''}${unrealizedPnL.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                          </p>
-                                          <p className={`text-sm ${isProfit ? 'text-order-green' : 'text-red-500'}`}>
-                                            ({unrealizedPercent > 0 ? '+' : ''}{unrealizedPercent.toFixed(2)}%)
-                                          </p>
-                                          {isProfit ? (
-                                            <TrendingUp className="w-4 h-4 text-order-green" />
-                                          ) : (
-                                            <TrendingDown className="w-4 h-4 text-red-500" />
-                                          )}
-                                        </div>
-                                        <div className="space-y-0.5">
-                                          <p className="text-xs text-muted-foreground">
-                                            Mevcut Değer: ${currentValue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                          </p>
-                                          {usdToTryRate > 0 && (
-                                            <p className={`text-xs ${isProfit ? 'text-order-green' : 'text-red-500'}/80`}>
-                                              TRY: {formatCurrency(unrealizedPnL * usdToTryRate, 'TRY')}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="space-y-1">
-                                        <p className="text-xs text-muted-foreground">Beklenen Kar</p>
-                                        <div className="flex items-center gap-2">
-                                          <p className="font-bold text-order-green">
-                                            +${expectedProfit.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
-                                          </p>
-                                          <p className="text-sm text-order-green">
-                                            (+{expectedPercent.toFixed(2)}%)
-                                          </p>
-                                        </div>
-                                        {usdToTryRate > 0 && (
-                                          <p className="text-xs text-order-green/80">
-                                            TRY: +{formatCurrency(expectedProfit * usdToTryRate, 'TRY')}
-                                          </p>
-                                        )}
-                                        <div className="w-full bg-muted rounded-full h-2 mt-1">
-                                          <div 
-                                            className={`h-2 rounded-full transition-all duration-500 ${
-                                              isTargetReached ? 'bg-order-green animate-pulse' : 
-                                              currentPrice >= position.sellTarget ? 'bg-order-green' : 'bg-corporate-blue'
-                                            }`}
-                                            style={{ 
-                                              width: `${Math.min(Math.max((currentPrice / position.sellTarget) * 100, 0), 100)}%` 
-                                            }}
-                                          />
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                          {currentPrice > 0 ? 
-                                            `${((currentPrice / position.sellTarget) * 100).toFixed(1)}% hedefe` : 
-                                            'Fiyat bekleniyor...'
-                                          }
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {position.notes && (
-                                  <p className="text-xs text-muted-foreground italic pt-1 border-t border-border/20">
-                                    💭 {position.notes}
-                                  </p>
-                                )}
-                                
-                                <p className="text-xs text-muted-foreground">
-                                  📅 {new Date(position.createdAt).toLocaleDateString('tr-TR')}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deletePnlPosition(position.id)}
-                              className="hover:bg-red-500/10 hover:text-red-500 transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="text-xs text-muted-foreground italic p-3 bg-order-green/5 rounded-lg border border-order-green/20">
-                💡 <strong>Geliştirilecek:</strong> Gerçek zamanlı fiyat güncellemeleri, portfolio özeti ve gelişmiş analitik özellikleri yakında eklenecek!
-              </div>
-            </TabsContent>
           </Tabs>
         </CollapsibleContent>
       </Collapsible>

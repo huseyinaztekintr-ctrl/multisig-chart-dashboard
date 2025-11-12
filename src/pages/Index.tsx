@@ -19,6 +19,7 @@ import { AirdropCard } from '@/components/AirdropCard';
 import { MultisigTokenSelector } from '@/components/MultisigTokenSelector';
 import { LiveClock } from '@/components/LiveClock';
 import { StrategyTable } from '@/components/StrategyTable';
+import { PnLTracker } from '@/components/PnLTracker';
 import { useSelectedToken } from '@/hooks/useSelectedToken';
 import { useState, useEffect } from 'react';
 import { TrendingUp } from 'lucide-react';
@@ -216,6 +217,7 @@ const Index = () => {
           <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 lg:overflow-y-auto">
             <MultisigLastActivity />
             <ComparativeAnalysis />
+            <PnLTracker />
             <AAVEIncomeDistribution />
             <MultisigHoldings />
           </div>

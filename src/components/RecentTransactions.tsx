@@ -8,7 +8,7 @@ import { ethers } from 'ethers';
 import { getCurrentSelectedToken } from '@/hooks/useSelectedToken';
 
 // ERC20 Transfer event topic
-const TRANSFER_TOPIC = ethers.id('Transfer(address,address,uint256)');
+const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 interface Transfer {
   from: string;
@@ -60,10 +60,10 @@ const RecentTransactionsComponent = () => {
           ? `https://api.routescan.io${path}?tokenAddress=${selectedToken.address}&limit=10&count=true`
           : `${window.location.origin}/.netlify/functions/routescan-proxy?${queryParams.toString()}`;
           
-        let response = await fetch(routescanUrl);
+        const response = await fetch(routescanUrl);
         
-        let data: any;
-        let newTransfers: any[] = [];
+        let data: Record<string, unknown>;
+        let newTransfers: Transfer[] = [];
         
         // If Routescan fails (rate limit, etc.), fallback to Avalanche Public RPC
         if (!response.ok) {
@@ -77,9 +77,9 @@ const RecentTransactionsComponent = () => {
           );
 
           // Ensure we only take the latest 10 logs and sort them by block number descending
-          const blocks = await Promise.all(logs.map((l: any) => provider.getBlock(l.blockNumber)));
+          const blocks = await Promise.all(logs.map((l: { blockNumber: number }) => provider.getBlock(l.blockNumber)));
 
-          newTransfers = logs.map((log: any, idx: number) => {
+          newTransfers = logs.map((log: { topics?: string[]; data?: string; blockNumber: number; transactionHash: string }, idx: number) => {
             const from = '0x' + (log.topics?.[1]?.slice(26) || '').toLowerCase();
             const to = '0x' + (log.topics?.[2]?.slice(26) || '').toLowerCase();
             const block = blocks[idx];
@@ -99,7 +99,7 @@ const RecentTransactionsComponent = () => {
           newTransfers = newTransfers.slice(0, 5);
         } else {
           data = await response.json();
-          newTransfers = (data.items || []).slice(0, 5);
+          newTransfers = (Array.isArray(data.items) ? data.items : []).slice(0, 5);
         }
         
         // Detect new transfers
@@ -188,7 +188,7 @@ const RecentTransactionsComponent = () => {
     try {
       // Support both decimal strings and hex (0x...) values
       const numAmount = amount?.startsWith('0x')
-        ? Number(ethers.formatUnits(amount, 18))
+        ? Number(ethers.utils.formatEther(amount))
         : parseFloat(amount) / 1e18;
 
       if (isNaN(numAmount)) return '0';
@@ -304,7 +304,7 @@ const RecentTransactionsComponent = () => {
                     <span className="text-xs text-muted-foreground">
                       {(() => {
                         const num = transfer.amount?.startsWith('0x')
-                          ? Number(ethers.formatUnits(transfer.amount, 18))
+                          ? Number(ethers.utils.formatEther(transfer.amount))
                           : parseFloat(transfer.amount) / 1e18;
                         return (num * tokenPrice).toLocaleString('tr-TR', {
                           minimumFractionDigits: 2,
