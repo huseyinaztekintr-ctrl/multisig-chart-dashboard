@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { BookOpen, Save, Trash2, ChevronDown, Bell, Plus, X, TrendingUp, TrendingDown, Calendar, PartyPopper, Edit } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -299,7 +299,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
         console.error('Error loading P&L positions:', e);
       }
     }
-  }, []);
+  }, [activeNoteId]);
 
   // Fetch TRY exchange rate
   useEffect(() => {
@@ -416,6 +416,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
     checkAlarms(); // Initial check
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alarms]);
 
   // Check P&L positions for sell target alerts
@@ -491,6 +492,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
     checkPnlAlerts(); // Initial check
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pnlPositions]);
 
   // Listen for external alarm updates (from navbar dialog)
@@ -512,7 +514,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
     };
   }, []);
 
-  const showNotification = async (title: string, body: string, alarm: Alarm) => {
+  const showNotification = useCallback(async (title: string, body: string, alarm: Alarm) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(title, { body, icon: '/order-logo.png' });
     }
@@ -591,7 +593,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
     } catch (error) {
       console.error('Error generating alarm TTS:', error);
     }
-  };
+  }, [toast, activeAlarm, notes]);
   
   const stopAlarm = () => {
     // Stop audio
