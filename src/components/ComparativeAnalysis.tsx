@@ -378,35 +378,35 @@ const ComparativeAnalysisComponent = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className={`p-2 rounded border transition-all duration-500 ${
+          <div className="grid grid-cols-2 gap-1">
+            <div className={`p-1.5 rounded border transition-all duration-500 ${
               data.isCirculatingLeading 
                 ? 'bg-corporate-blue/10 border-corporate-blue/30 ring-2 ring-corporate-blue shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
                 : 'bg-order-green/10 border-order-green/30 ring-2 ring-order-green shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             }`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground">
                   {data.isCirculatingLeading ? 'Dolaşım Fazlası' : 'Multisig Fazlası'}
                 </span>
-                <TrendingUp className={`w-3 h-3 ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`} />
+                <TrendingUp className={`w-2.5 h-2.5 ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`} />
               </div>
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1">
-                  <span className={`font-bold text-xs ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>$</span>
-                  <p className={`text-base font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>
+                <div className="flex items-center gap-0.5">
+                  <span className={`font-bold text-[9px] ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>$</span>
+                  <p className={`text-xs font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>
                     {data.difference.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   </p>
-                  <span className="text-xs text-muted-foreground">
-                    (₺{data.differenceTry.toLocaleString('tr-TR', { maximumFractionDigits: 0 })})
-                  </span>
                 </div>
-                {/* Difference values in 2x2 grid to save space */}
-                <div className="grid grid-cols-2 gap-0.5 text-[10px]">
+                <div className="text-[8px] text-muted-foreground">
+                  ₺{data.differenceTry.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                </div>
+                {/* Compact crypto values */}
+                <div className="grid grid-cols-2 gap-0.5 text-[8px]">
                   <div className="flex items-center gap-0.5">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-2 h-2"
+                      className="w-1.5 h-1.5"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.differenceAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -416,52 +416,32 @@ const ComparativeAnalysisComponent = () => {
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-2 h-2"
+                      className="w-1.5 h-1.5"
                     />
                     <span className="text-muted-foreground truncate">
                       {data.differenceBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <img 
-                      src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
-                      alt="ARENA" 
-                      className="w-2 h-2"
-                    />
-                    <span className="text-muted-foreground truncate">
-                      {data.differenceArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <img 
-                      src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
-                      alt="ORDER" 
-                      className="w-2 h-2"
-                    />
-                    <span className="text-muted-foreground truncate font-medium">
-                      {data.differenceOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className={`p-2 rounded border transition-all duration-500 ${
+            <div className={`p-1.5 rounded border transition-all duration-500 ${
               data.isCirculatingLeading 
                 ? 'bg-corporate-blue/10 border-corporate-blue/30 ring-2 ring-corporate-blue shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
                 : 'bg-order-green/10 border-order-green/30 ring-2 ring-order-green shadow-[0_0_20px_rgba(34,197,94,0.4)]'
             }`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-muted-foreground">Değer Oranı</span>
-                <Scale className={`w-3 h-3 ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`} />
+                <span className="text-[10px] text-muted-foreground">Değer Oranı</span>
+                <Scale className={`w-2.5 h-2.5 ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`} />
               </div>
-              <p className={`text-base font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>
+              <p className={`text-sm font-bold ${data.isCirculatingLeading ? 'text-corporate-blue' : 'text-order-green'}`}>
                 {(data.ratio || 0).toFixed(2)}x
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[8px] text-muted-foreground mt-1 leading-tight">
                 {Math.abs(data.circulatingValue) >= Math.abs(data.multisigTotalValue)
-                  ? `Dolaşımdaki ORDER, Multisig'in ${(data.ratio || 0).toFixed(2)} katı değerde`
-                  : `Multisig, Dolaşımdaki ORDER'in ${(data.ratio || 0).toFixed(2)} katı değerde`}
+                  ? `Dolaşım ${(data.ratio || 0).toFixed(2)}x fazla`
+                  : `Multisig ${(data.ratio || 0).toFixed(2)}x fazla`}
               </p>
             </div>
           </div>
