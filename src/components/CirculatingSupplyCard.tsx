@@ -114,46 +114,44 @@ const CirculatingSupplyCardComponent = () => {
                   {value.usd.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                   <TrendingUp className="w-4 h-4 text-order-green" />
                 </p>
-              </div>
-              
-              {/* Crypto values next to USD */}
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex items-center gap-1">
-                  <img 
-                    src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
-                    alt="AVAX" 
-                    className="w-3 h-3"
-                  />
-                  <span className="text-muted-foreground">
-                    {value.avax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <img 
-                    src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
-                    alt="BTC" 
-                    className="w-3 h-3"
-                  />
-                  <span className="text-muted-foreground">
-                    {value.btc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <img 
-                    src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
-                    alt="ARENA" 
-                    className="w-3 h-3"
-                  />
-                  <span className="text-muted-foreground">
-                    {value.arena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
-                  </span>
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  (₺{value.try.toLocaleString('tr-TR', { maximumFractionDigits: 0 })})
+                </span>
               </div>
             </div>
             
-            {/* TRY value on separate line */}
-            <div className="text-sm text-muted-foreground">
-              ₺{value.try.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+            {/* Crypto values on separate line */}
+            <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-1">
+                <img 
+                  src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
+                  alt="AVAX" 
+                  className="w-3 h-3"
+                />
+                <span className="text-muted-foreground">
+                  {value.avax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <img 
+                  src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
+                  alt="BTC" 
+                  className="w-3 h-3"
+                />
+                <span className="text-muted-foreground">
+                  {value.btc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <img 
+                  src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
+                  alt="ARENA" 
+                  className="w-3 h-3"
+                />
+                <span className="text-muted-foreground">
+                  {value.arena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
+                </span>
+              </div>
             </div>
           </div>
         </div>

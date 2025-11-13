@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, BarChart3, Target, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { getEnabledTokens } from './TokenManager';
 import { fetchDexScreenerPrice } from '@/utils/blockchain';
@@ -33,6 +34,7 @@ export const PnLTracker = () => {
   const { toast } = useToast();
   const [pnlPositions, setPnlPositions] = useState<PnLPosition[]>([]);
   const [showPnlForm, setShowPnlForm] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [usdToTryRate, setUsdToTryRate] = useState<number>(0);
 
   // P&L form states
@@ -194,8 +196,118 @@ export const PnLTracker = () => {
     });
   };
 
+  // Calculate summary statistics
+  const totalPositions = pnlPositions.length;
+  const activePositions = pnlPositions.filter(p => !p.targetReached).length;
+  const completedPositions = pnlPositions.filter(p => p.targetReached).length;
+  const uniqueTokens = [...new Set(pnlPositions.map(p => p.tokenSymbol))];
+  
+  const totalUnrealizedPnL = pnlPositions.reduce((sum, position) => {
+    if (!position.currentPrice) return sum;
+    const currentValue = position.quantity * position.currentPrice;
+    const entryValue = position.quantity * position.entryPrice;
+    return sum + (currentValue - entryValue);
+  }, 0);
+
   return (
-    <Card className="p-5 gradient-card border-order-green/30 glow-order h-full flex flex-col">
+    <>
+      {/* Compact Summary Card */}
+      <Card 
+        className="p-3 gradient-card border-order-green/30 glow-order cursor-pointer hover:border-order-green/50 transition-all"
+        onClick={() => setShowDialog(true)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-order-green animate-pulse-slow" />
+            <h3 className="text-base font-bold text-foreground">P&L Tracker</h3>
+            {totalPositions > 0 && (
+              <span className="text-xs bg-order-green/10 text-order-green px-2 py-1 rounded border border-order-green/30">
+                {totalPositions} pozisyon
+              </span>
+            )}
+          </div>
+          <Eye className="w-4 h-4 text-muted-foreground" />
+        </div>
+
+        {totalPositions > 0 ? (
+          <div className="mt-3 space-y-2">
+            {/* Token Logos */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground mr-2">Tokenler:</span>
+              <div className="flex items-center -space-x-1">
+                {uniqueTokens.slice(0, 4).map((tokenSymbol) => {
+                  const position = pnlPositions.find(p => p.tokenSymbol === tokenSymbol);
+                  return (
+                    <img 
+                      key={tokenSymbol}
+                      src={position?.tokenLogo} 
+                      alt={tokenSymbol}
+                      className="w-6 h-6 rounded-full ring-2 ring-background"
+                    />
+                  );
+                })}
+                {uniqueTokens.length > 4 && (
+                  <div className="w-6 h-6 rounded-full bg-muted ring-2 ring-background flex items-center justify-center text-xs font-bold text-muted-foreground">
+                    +{uniqueTokens.length - 4}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* P&L Summary */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Aktif</p>
+                  <p className="text-sm font-bold text-corporate-blue">{activePositions}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Tamamlanan</p>
+                  <p className="text-sm font-bold text-order-green">{completedPositions}</p>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Toplam K/Z</p>
+                <div className="flex items-center gap-1">
+                  <p className={`text-sm font-bold ${totalUnrealizedPnL >= 0 ? 'text-order-green' : 'text-red-500'}`}>
+                    {totalUnrealizedPnL >= 0 ? '+' : ''}${totalUnrealizedPnL.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+                  </p>
+                  {totalUnrealizedPnL !== 0 && (
+                    totalUnrealizedPnL > 0 ? (
+                      <TrendingUp className="w-3 h-3 text-order-green" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3 text-red-500" />
+                    )
+                  )}
+                </div>
+                {usdToTryRate > 0 && (
+                  <p className={`text-xs ${totalUnrealizedPnL >= 0 ? 'text-order-green' : 'text-red-500'}/80`}>
+                    ₺{(totalUnrealizedPnL * usdToTryRate).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 text-center">
+            <p className="text-sm text-muted-foreground">Henüz pozisyon eklenmemiş</p>
+          </div>
+        )}
+      </Card>
+
+      {/* Full Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-order-green" />
+              P&L Tracker
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto">
+            <Card className="p-5 gradient-card border-order-green/30 glow-order h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-6 h-6 text-order-green animate-pulse-slow" />
@@ -501,9 +613,13 @@ export const PnLTracker = () => {
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground italic p-3 bg-order-green/5 rounded-lg border border-order-green/20 mt-4">
-        💡 <strong>Geliştirilecek:</strong> Gerçek zamanlı fiyat güncellemeleri, portfolio özeti ve gelişmiş analitik özellikleri yakında eklenecek!
-      </div>
-    </Card>
+              <div className="text-xs text-muted-foreground italic p-3 bg-order-green/5 rounded-lg border border-order-green/20 mt-4">
+                💡 <strong>Geliştirilecek:</strong> Gerçek zamanlı fiyat güncellemeleri, portfolio özeti ve gelişmiş analitik özellikleri yakında eklenecek!
+              </div>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
