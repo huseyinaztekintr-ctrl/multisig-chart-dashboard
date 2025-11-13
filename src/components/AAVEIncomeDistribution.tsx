@@ -1,7 +1,8 @@
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Plus, X, Edit2 } from 'lucide-react';
+import { TrendingUp, Plus, X, Edit2, PieChart, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState, useEffect, memo } from 'react';
 
 // Get token from localStorage
@@ -56,6 +57,7 @@ const AAVEIncomeDistributionComponent = () => {
   const [monthlyTRY, setMonthlyTRY] = useState(0);
   const [tryRate, setTryRate] = useState(34.5);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [newCategory, setNewCategory] = useState({ percentage: 0, emoji: '', name: '' });
 
   // Read values from AAVE calculator
@@ -96,7 +98,7 @@ const AAVEIncomeDistributionComponent = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
   }, [categories]);
 
-  const updateCategory = (id: string, field: keyof DistributionCategory, value: any) => {
+  const updateCategory = (id: string, field: keyof DistributionCategory, value: string | number | boolean) => {
     setCategories(categories.map(cat => 
       cat.id === id ? { ...cat, [field]: value } : cat
     ));
@@ -125,7 +127,102 @@ const AAVEIncomeDistributionComponent = () => {
   const enabledCategories = categories.filter(cat => cat.enabled);
 
   return (
-    <Card className="p-4 bg-gradient-to-br from-[#2EBAC6]/10 to-[#B6509E]/10 border-[#2EBAC6] ring-2 ring-[#2EBAC6] shadow-[0_0_30px_rgba(46,186,198,0.6)] animate-glow-pulse backdrop-blur-sm">
+    <>
+      {/* Compact Summary Card */}
+      <Card 
+        className="p-3 bg-gradient-to-br from-[#2EBAC6]/10 to-[#B6509E]/10 border-[#2EBAC6]/30 glow-aave cursor-pointer hover:border-[#2EBAC6]/50 transition-all"
+        onClick={() => setShowDialog(true)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <PieChart className="w-5 h-5 text-[#2EBAC6] animate-pulse-slow" />
+            <h3 className="text-base font-bold text-foreground">Gelir Dağılımı</h3>
+            {enabledCategories.length > 0 && (
+              <span className="text-xs bg-[#2EBAC6]/10 text-[#2EBAC6] px-2 py-1 rounded border border-[#2EBAC6]/30">
+                {enabledCategories.length} kategori
+              </span>
+            )}
+          </div>
+          <Eye className="w-4 h-4 text-muted-foreground" />
+        </div>
+
+        {monthlyUSD > 0 ? (
+          <div className="mt-3 space-y-2">
+            {/* Monthly Totals */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Aylık USD</p>
+                  <p className="text-lg font-bold text-[#2EBAC6]">
+                    ${monthlyUSD.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Aylık TRY</p>
+                  <p className="text-lg font-bold text-[#B6509E]">
+                    ₺{monthlyTRY.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Dağılım</p>
+                <p className={`text-sm font-bold ${totalPercentage === 100 ? 'text-[#2EBAC6]' : 'text-yellow-500'}`}>
+                  {totalPercentage}%
+                </p>
+                {totalPercentage !== 100 && (
+                  <p className="text-xs text-yellow-500/80">
+                    Ayarlanmalı
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Top 3 Categories Preview */}
+            <div className="space-y-1">
+              {enabledCategories.slice(0, 3).map((category) => {
+                const usdAmount = (monthlyUSD * category.percentage) / 100;
+                return (
+                  <div key={category.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#2EBAC6]">{category.percentage}%</span>
+                      <span className="text-sm">{category.emoji}</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-20">
+                        {category.name}
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-foreground">
+                      ${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                );
+              })}
+              {enabledCategories.length > 3 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  +{enabledCategories.length - 3} kategori daha...
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 text-center">
+            <p className="text-sm text-muted-foreground">AAVE geliri bekleniyor...</p>
+          </div>
+        )}
+      </Card>
+
+      {/* Full Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PieChart className="w-5 h-5 text-[#2EBAC6]" />
+              Aylık Gelir Dağılımı
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto">
+            <Card className="p-4 bg-gradient-to-br from-[#2EBAC6]/10 to-[#B6509E]/10 border-[#2EBAC6] ring-2 ring-[#2EBAC6] shadow-[0_0_30px_rgba(46,186,198,0.6)] animate-glow-pulse backdrop-blur-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-[#2EBAC6]" />
@@ -309,17 +406,21 @@ const AAVEIncomeDistributionComponent = () => {
         </div>
       )}
 
-      {/* Total Percentage Warning */}
-      {totalPercentage !== 100 && (
-        <div className={`text-xs text-center p-1.5 rounded ${
-          totalPercentage > 100 
-            ? 'bg-red-500/10 text-red-500' 
-            : 'bg-yellow-500/10 text-yellow-500'
-        }`}>
-          Toplam: {totalPercentage}% {totalPercentage !== 100 && '(100% olmalı)'}
-        </div>
-      )}
-    </Card>
+              {/* Total Percentage Warning */}
+              {totalPercentage !== 100 && (
+                <div className={`text-xs text-center p-1.5 rounded ${
+                  totalPercentage > 100 
+                    ? 'bg-red-500/10 text-red-500' 
+                    : 'bg-yellow-500/10 text-yellow-500'
+                }`}>
+                  Toplam: {totalPercentage}% {totalPercentage !== 100 && '(100% olmalı)'}
+                </div>
+              )}
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
