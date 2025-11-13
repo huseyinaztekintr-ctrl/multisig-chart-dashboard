@@ -192,10 +192,29 @@ export const PnLTracker = () => {
       return;
     }
 
-    if (isNaN(sellTarget) || sellTarget <= entryPrice) {
+    if (isNaN(sellTarget) || sellTarget <= 0) {
       toast({
         title: 'Hata',
-        description: 'Satış hedefi alım fiyatından yüksek olmalı.',
+        description: 'Geçerli bir satış hedefi giriniz.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Position type specific validation
+    if (positionType === 'short' && sellTarget >= entryPrice) {
+      toast({
+        title: 'Hata',
+        description: 'Short pozisyonda satış hedefi entry fiyatından düşük olmalıdır.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if ((positionType === 'long' || positionType === 'spot') && sellTarget <= entryPrice) {
+      toast({
+        title: 'Hata',
+        description: 'Long/Spot pozisyonda satış hedefi entry fiyatından yüksek olmalıdır.',
         variant: 'destructive',
       });
       return;
@@ -617,19 +636,22 @@ export const PnLTracker = () => {
                   <SelectItem value="spot">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      Spot
+                      <span>Spot</span>
+                      <span className="text-xs text-muted-foreground">(Fiyat ↗️)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="long">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-order-green rounded-full"></span>
-                      Long
+                      <span>Long</span>
+                      <span className="text-xs text-muted-foreground">(Fiyat ↗️)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="short">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      Short
+                      <span>Short</span>
+                      <span className="text-xs text-muted-foreground">(Fiyat ↘️)</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -663,13 +685,15 @@ export const PnLTracker = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">Satış Hedefi ($)</Label>
+              <Label className="text-xs">
+                {positionType === 'short' ? 'Satış Hedefi ($) - Entry\'dan düşük' : 'Satış Hedefi ($) - Entry\'dan yüksek'}
+              </Label>
               <Input
                 type="number"
                 step="0.000001"
                 value={pnlSellTarget}
                 onChange={(e) => setPnlSellTarget(e.target.value)}
-                placeholder="0.00"
+                placeholder={positionType === 'short' ? 'Entry\'dan düşük fiyat' : 'Entry\'dan yüksek fiyat'}
                 className="bg-background/50 border-order-green/30 focus:border-order-green"
               />
             </div>
