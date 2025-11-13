@@ -299,6 +299,30 @@ export const PnLTracker = () => {
     return sum + (currentValue - entryValue);
   }, 0);
 
+  // Additional statistics for compact card
+  const completionRate = totalPositions > 0 ? (completedPositions / totalPositions) * 100 : 0;
+  
+  // Find position closest to target
+  const closestToTarget = pnlPositions
+    .filter(p => !p.targetReached && p.currentPrice)
+    .map(p => {
+      const progressPercent = ((p.currentPrice! / p.sellTarget) * 100);
+      return { symbol: p.tokenSymbol, progress: progressPercent };
+    })
+    .sort((a, b) => b.progress - a.progress)[0];
+
+  // Average P&L percentage
+  const avgPnLPercent = pnlPositions.length > 0 
+    ? pnlPositions.reduce((sum, p) => {
+        if (!p.currentPrice) return sum;
+        const percent = ((p.currentPrice / p.entryPrice) - 1) * 100;
+        return sum + percent;
+      }, 0) / pnlPositions.filter(p => p.currentPrice).length
+    : 0;
+
+  // Total invested amount
+  const totalInvested = pnlPositions.reduce((sum, p) => sum + (p.quantity * p.entryPrice), 0);
+
   return (
     <>
       {/* Compact Summary Card */}
@@ -320,44 +344,83 @@ export const PnLTracker = () => {
         </div>
 
         {totalPositions > 0 ? (
-          <div className="mt-3 space-y-2">
-            {/* Token Logos */}
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground mr-2">Tokenler:</span>
-              <div className="flex items-center -space-x-1">
-                {uniqueTokens.slice(0, 4).map((tokenSymbol) => {
-                  const position = pnlPositions.find(p => p.tokenSymbol === tokenSymbol);
-                  return (
-                    <img 
-                      key={tokenSymbol}
-                      src={position?.tokenLogo} 
-                      alt={tokenSymbol}
-                      className="w-6 h-6 rounded-full ring-2 ring-background"
-                    />
-                  );
-                })}
-                {uniqueTokens.length > 4 && (
-                  <div className="w-6 h-6 rounded-full bg-muted ring-2 ring-background flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    +{uniqueTokens.length - 4}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* P&L Summary */}
+          <div className="mt-3 space-y-3">
+            {/* Token Logos & Completion Rate */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Aktif</p>
-                  <p className="text-sm font-bold text-corporate-blue">{activePositions}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Tamamlanan</p>
-                  <p className="text-sm font-bold text-order-green">{completedPositions}</p>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground mr-2">Tokenler:</span>
+                <div className="flex items-center -space-x-1">
+                  {uniqueTokens.slice(0, 4).map((tokenSymbol) => {
+                    const position = pnlPositions.find(p => p.tokenSymbol === tokenSymbol);
+                    return (
+                      <img 
+                        key={tokenSymbol}
+                        src={position?.tokenLogo} 
+                        alt={tokenSymbol}
+                        className="w-6 h-6 rounded-full ring-2 ring-background"
+                      />
+                    );
+                  })}
+                  {uniqueTokens.length > 4 && (
+                    <div className="w-6 h-6 rounded-full bg-muted ring-2 ring-background flex items-center justify-center text-xs font-bold text-muted-foreground">
+                      +{uniqueTokens.length - 4}
+                    </div>
+                  )}
                 </div>
               </div>
               
+              {/* Completion Rate */}
               <div className="text-right">
+                <p className="text-xs text-muted-foreground">Tamamlanma</p>
+                <div className="flex items-center gap-1">
+                  <p className={`text-sm font-bold ${
+                    completionRate >= 50 ? 'text-order-green' : 
+                    completionRate >= 25 ? 'text-yellow-500' : 'text-muted-foreground'
+                  }`}>
+                    {completionRate.toFixed(0)}%
+                  </p>
+                  <div className="w-8 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-500 ${
+                        completionRate >= 50 ? 'bg-order-green' : 
+                        completionRate >= 25 ? 'bg-yellow-500' : 'bg-muted-foreground'
+                      }`}
+                      style={{ width: `${Math.min(completionRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <p className="text-xs text-muted-foreground">Aktif</p>
+                <p className="text-sm font-bold text-corporate-blue">{activePositions}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tamamlanan</p>
+                <p className="text-sm font-bold text-order-green">{completedPositions}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Ort. K/Z</p>
+                <p className={`text-sm font-bold ${
+                  avgPnLPercent >= 0 ? 'text-order-green' : 'text-red-500'
+                }`}>
+                  {avgPnLPercent >= 0 ? '+' : ''}{avgPnLPercent.toFixed(1)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Yatırım</p>
+                <p className="text-sm font-bold text-muted-foreground">
+                  ${totalInvested.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+                </p>
+              </div>
+            </div>
+
+            {/* P&L Summary & Closest Target */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+              <div>
                 <p className="text-xs text-muted-foreground">Toplam K/Z</p>
                 <div className="flex items-center gap-1">
                   <p className={`text-sm font-bold ${totalUnrealizedPnL >= 0 ? 'text-order-green' : 'text-red-500'}`}>
@@ -377,11 +440,26 @@ export const PnLTracker = () => {
                   </p>
                 )}
               </div>
+              
+              {/* Closest to Target */}
+              {closestToTarget && (
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">En Yakın Hedef</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-bold text-corporate-blue">{closestToTarget.symbol}</p>
+                    <Target className="w-3 h-3 text-corporate-blue" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {closestToTarget.progress.toFixed(1)}% tamamlandı
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="mt-3 text-center">
+          <div className="mt-3 text-center py-2">
             <p className="text-sm text-muted-foreground">Henüz pozisyon eklenmemiş</p>
+            <p className="text-xs text-muted-foreground mt-1">İlk pozisyonunu eklemek için tıkla</p>
           </div>
         )}
       </Card>
