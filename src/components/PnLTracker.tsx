@@ -201,6 +201,8 @@ export const PnLTracker = () => {
       sellTarget,
       notes: pnlNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
+      targetReached: false, // Explicitly set to false
+      currentPrice: 0, // Initialize current price
     };
 
     try {
@@ -289,7 +291,7 @@ export const PnLTracker = () => {
   // Calculate summary statistics
   const totalPositions = pnlPositions.length;
   const activePositions = pnlPositions.filter(p => !p.targetReached).length;
-  const completedPositions = pnlPositions.filter(p => p.targetReached).length;
+  const completedPositions = pnlPositions.filter(p => p.targetReached === true).length;
   const uniqueTokens = [...new Set(pnlPositions.map(p => p.tokenSymbol))];
   
   const totalUnrealizedPnL = pnlPositions.reduce((sum, position) => {
@@ -302,9 +304,22 @@ export const PnLTracker = () => {
   // Additional statistics for compact card
   const completionRate = totalPositions > 0 ? (completedPositions / totalPositions) * 100 : 0;
   
+  // Debug completion rate
+  console.log('P&L Debug:', {
+    totalPositions,
+    completedPositions,
+    completionRate,
+    positions: pnlPositions.map(p => ({
+      symbol: p.tokenSymbol,
+      targetReached: p.targetReached,
+      currentPrice: p.currentPrice,
+      sellTarget: p.sellTarget
+    }))
+  });
+  
   // Find position closest to target
   const closestToTarget = pnlPositions
-    .filter(p => !p.targetReached && p.currentPrice)
+    .filter(p => p.targetReached !== true && p.currentPrice && p.currentPrice > 0)
     .map(p => {
       const progressPercent = ((p.currentPrice! / p.sellTarget) * 100);
       return { symbol: p.tokenSymbol, progress: progressPercent };
@@ -376,7 +391,7 @@ export const PnLTracker = () => {
                   <p className={`text-sm font-bold ${
                     completionRate >= 50 ? 'text-order-green' : 
                     completionRate >= 25 ? 'text-yellow-500' : 'text-muted-foreground'
-                  }`}>
+                  }`} title={`${completedPositions}/${totalPositions} tamamlandı`}>
                     {completionRate.toFixed(0)}%
                   </p>
                   <div className="w-8 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -809,14 +824,38 @@ export const PnLTracker = () => {
                       </div>
                     </div>
                     
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deletePnlPosition(position.id)}
-                      className="hover:bg-red-500/10 hover:text-red-500 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const updatedPositions = pnlPositions.map(p => 
+                            p.id === position.id 
+                              ? { ...p, targetReached: !p.targetReached }
+                              : p
+                          );
+                          setPnlPositions(updatedPositions);
+                          localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+                          toast({
+                            title: position.targetReached ? 'Hedef kaldırıldı' : 'Hedef tamamlandı',
+                            description: `${position.tokenSymbol} pozisyonu ${position.targetReached ? 'aktif' : 'tamamlandı'} olarak işaretlendi.`,
+                          });
+                        }}
+                        className={`hover:bg-order-green/10 hover:text-order-green transition-all ${
+                          position.targetReached ? 'text-order-green bg-order-green/5' : ''
+                        }`}
+                      >
+                        <Target className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deletePnlPosition(position.id)}
+                        className="hover:bg-red-500/10 hover:text-red-500 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
