@@ -50,7 +50,20 @@ export const PnLTracker = () => {
     const savedPnlPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
     if (savedPnlPositions) {
       try {
-        setPnlPositions(JSON.parse(savedPnlPositions));
+        const positions = JSON.parse(savedPnlPositions);
+        // Migrate old positions to include targetReached and currentPrice
+        const migratedPositions = positions.map((p: PnLPosition) => ({
+          ...p,
+          targetReached: p.targetReached ?? false, // Default to false if undefined
+          currentPrice: p.currentPrice ?? 0 // Default to 0 if undefined
+        }));
+        setPnlPositions(migratedPositions);
+        
+        // Save migrated positions back to localStorage
+        if (JSON.stringify(positions) !== JSON.stringify(migratedPositions)) {
+          localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(migratedPositions));
+          console.log('Migrated PnL positions with targetReached property');
+        }
       } catch (e) {
         console.error('Error loading P&L positions:', e);
       }
@@ -313,8 +326,10 @@ export const PnLTracker = () => {
       symbol: p.tokenSymbol,
       targetReached: p.targetReached,
       currentPrice: p.currentPrice,
-      sellTarget: p.sellTarget
-    }))
+      sellTarget: p.sellTarget,
+      id: p.id
+    })),
+    rawPositions: pnlPositions
   });
   
   // Find position closest to target
