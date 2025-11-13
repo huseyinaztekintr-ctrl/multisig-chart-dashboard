@@ -10,7 +10,7 @@ const getTokenBySymbol = (symbol: string) => {
   const tokensData = localStorage.getItem('multisig-tokens');
   if (!tokensData) return null;
   const tokens = JSON.parse(tokensData);
-  return tokens.find((t: { symbol: string }) => t.symbol === symbol);
+  return tokens.find((t: any) => t.symbol === symbol);
 };
 
 // Get stablecoin logos for compound category
@@ -22,7 +22,7 @@ const getStablecoinLogos = (): Array<{ symbol: string; logo: string }> => {
   const tokens = JSON.parse(tokensData);
   return stablecoins
     .map(symbol => {
-      const token = tokens.find((t: { symbol: string }) => t.symbol === symbol);
+      const token = tokens.find((t: any) => t.symbol === symbol);
       return token ? { symbol: token.symbol, logo: token.logo } : null;
     })
     .filter(Boolean) as Array<{ symbol: string; logo: string }>;

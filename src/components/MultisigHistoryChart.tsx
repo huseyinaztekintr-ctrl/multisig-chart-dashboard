@@ -628,7 +628,7 @@ export const MultisigHistoryChart = () => {
               <stop offset="95%" stopColor="#e30a17" stopOpacity={0.1}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <CartesianGrid strokedasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
           <XAxis 
             dataKey="date" 
             stroke="hsl(var(--muted-foreground))"
@@ -673,8 +673,7 @@ export const MultisigHistoryChart = () => {
               padding: '12px',
               minWidth: '250px',
             }}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            content={({ active, payload }: { active?: boolean; payload?: any[] }) => {
+            content={({ active, payload }: any) => {
               if (active && payload && payload.length) {
                 const data = payload[0].payload;
                 return (
@@ -683,7 +682,6 @@ export const MultisigHistoryChart = () => {
                     
                     <div className="mb-3 pb-2 border-b border-border/50">
                       <p className="text-[10px] text-muted-foreground mb-1 uppercase">Performans</p>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {payload.filter((entry: any) => entry.dataKey.startsWith('value')).map((entry: any) => {
                         const value = entry.value;
                         const changePercent = ((value - 1) * 100).toFixed(2);
@@ -776,7 +774,6 @@ export const MultisigHistoryChart = () => {
                   <LabelList
                     dataKey={dataKey}
                     position="right"
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     content={(props: any) => {
                       const { x, y, index } = props;
                       if (index === chartData.length - 1) {

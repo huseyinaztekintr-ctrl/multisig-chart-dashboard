@@ -23,7 +23,6 @@ interface PnLPosition {
   quantity: number;
   entryPrice: number;
   sellTarget: number;
-  positionType: 'spot' | 'long' | 'short';
   notes?: string;
   createdAt: string;
   currentPrice?: number;
@@ -43,7 +42,6 @@ export const PnLTracker = () => {
   const [pnlQuantity, setPnlQuantity] = useState('');
   const [pnlEntryPrice, setPnlEntryPrice] = useState('');
   const [pnlSellTarget, setPnlSellTarget] = useState('');
-  const [positionType, setPositionType] = useState<'spot' | 'long' | 'short'>('spot');
   const [pnlNotes, setPnlNotes] = useState('');
   const [formKey, setFormKey] = useState(0); // For forcing form re-render
 
@@ -57,8 +55,7 @@ export const PnLTracker = () => {
         const migratedPositions = positions.map((p: PnLPosition) => ({
           ...p,
           targetReached: p.targetReached ?? false, // Default to false if undefined
-          currentPrice: p.currentPrice ?? 0, // Default to 0 if undefined
-          positionType: p.positionType ?? 'spot' // Default to spot if undefined
+          currentPrice: p.currentPrice ?? 0 // Default to 0 if undefined
         }));
         setPnlPositions(migratedPositions);
         
@@ -122,20 +119,12 @@ export const PnLTracker = () => {
           updatedPositions[i].lastUpdated = new Date().toISOString();
           hasUpdates = true;
 
-          // Check if sell target is reached based on position type
-          const isTargetReached = position.positionType === 'short'
-            ? tokenPrice <= position.sellTarget  // Short: target reached when price goes down
-            : tokenPrice >= position.sellTarget; // Long/Spot: target reached when price goes up
-            
-          if (isTargetReached) {
+          // Check if sell target is reached
+          if (tokenPrice >= position.sellTarget) {
             updatedPositions[i].targetReached = true;
             
-            const profit = position.positionType === 'short'
-              ? (position.entryPrice - position.sellTarget) * position.quantity
-              : (position.sellTarget - position.entryPrice) * position.quantity;
-            const profitPercent = position.positionType === 'short'
-              ? ((position.entryPrice / position.sellTarget) - 1) * 100
-              : ((position.sellTarget / position.entryPrice) - 1) * 100;
+            const profit = (position.sellTarget - position.entryPrice) * position.quantity;
+            const profitPercent = ((position.sellTarget / position.entryPrice) - 1) * 100;
             
             toast({
               title: `🎯 ${position.tokenSymbol} HEDEF ULAŞILDI! 🚀`,
@@ -192,29 +181,10 @@ export const PnLTracker = () => {
       return;
     }
 
-    if (isNaN(sellTarget) || sellTarget <= 0) {
+    if (isNaN(sellTarget) || sellTarget <= entryPrice) {
       toast({
         title: 'Hata',
-        description: 'Geçerli bir satış hedefi giriniz.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Position type specific validation
-    if (positionType === 'short' && sellTarget >= entryPrice) {
-      toast({
-        title: 'Hata',
-        description: 'Short pozisyonda satış hedefi entry fiyatından düşük olmalıdır.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if ((positionType === 'long' || positionType === 'spot') && sellTarget <= entryPrice) {
-      toast({
-        title: 'Hata',
-        description: 'Long/Spot pozisyonda satış hedefi entry fiyatından yüksek olmalıdır.',
+        description: 'Satış hedefi alım fiyatından yüksek olmalı.',
         variant: 'destructive',
       });
       return;
@@ -242,7 +212,6 @@ export const PnLTracker = () => {
       quantity,
       entryPrice,
       sellTarget,
-      positionType,
       notes: pnlNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
       targetReached: false, // Explicitly set to false
@@ -263,7 +232,6 @@ export const PnLTracker = () => {
         setPnlQuantity('');
         setPnlEntryPrice('');
         setPnlSellTarget('');
-        setPositionType('spot');
         setPnlNotes('');
         setFormKey(prev => prev + 1); // Force re-render
       }, 0);
@@ -339,26 +307,11 @@ export const PnLTracker = () => {
   const completedPositions = pnlPositions.filter(p => p.targetReached === true).length;
   const uniqueTokens = [...new Set(pnlPositions.map(p => p.tokenSymbol))];
   
-  // Calculate P&L based on position type
-  const calculatePositionPnL = (position: PnLPosition) => {
-    if (!position.currentPrice) return 0;
-    
+  const totalUnrealizedPnL = pnlPositions.reduce((sum, position) => {
+    if (!position.currentPrice) return sum;
     const currentValue = position.quantity * position.currentPrice;
     const entryValue = position.quantity * position.entryPrice;
-    
-    switch (position.positionType) {
-      case 'long':
-        return currentValue - entryValue; // Profit when price goes up
-      case 'short':
-        return entryValue - currentValue; // Profit when price goes down
-      case 'spot':
-      default:
-        return currentValue - entryValue; // Standard spot calculation
-    }
-  };
-
-  const totalUnrealizedPnL = pnlPositions.reduce((sum, position) => {
-    return sum + calculatePositionPnL(position);
+    return sum + (currentValue - entryValue);
   }, 0);
 
   // Additional statistics for compact card
@@ -383,10 +336,8 @@ export const PnLTracker = () => {
   const closestToTarget = pnlPositions
     .filter(p => p.targetReached !== true && p.currentPrice && p.currentPrice > 0)
     .map(p => {
-      const progressPercent = p.positionType === 'short'
-        ? ((p.entryPrice - p.currentPrice!) / (p.entryPrice - p.sellTarget)) * 100
-        : (p.currentPrice! / p.sellTarget) * 100;
-      return { symbol: p.tokenSymbol, progress: Math.max(0, progressPercent), type: p.positionType };
+      const progressPercent = ((p.currentPrice! / p.sellTarget) * 100);
+      return { symbol: p.tokenSymbol, progress: progressPercent };
     })
     .sort((a, b) => b.progress - a.progress)[0];
 
@@ -584,7 +535,6 @@ export const PnLTracker = () => {
                 setPnlQuantity('');
                 setPnlEntryPrice('');
                 setPnlSellTarget('');
-                setPositionType('spot');
                 setPnlNotes('');
                 setFormKey(prev => prev + 1);
               }
@@ -627,40 +577,6 @@ export const PnLTracker = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">Pozisyon Türü</Label>
-              <Select key={`type-${formKey}`} value={positionType} onValueChange={(value: 'spot' | 'long' | 'short') => setPositionType(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tür seçin" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="spot">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      <span>Spot</span>
-                      <span className="text-xs text-muted-foreground">(Fiyat ↗️)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="long">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-order-green rounded-full"></span>
-                      <span>Long</span>
-                      <span className="text-xs text-muted-foreground">(Fiyat ↗️)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="short">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      <span>Short</span>
-                      <span className="text-xs text-muted-foreground">(Fiyat ↘️)</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
               <Label className="text-xs">Adet</Label>
               <Input
                 type="number"
@@ -685,15 +601,13 @@ export const PnLTracker = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">
-                {positionType === 'short' ? 'Satış Hedefi ($) - Entry\'dan düşük' : 'Satış Hedefi ($) - Entry\'dan yüksek'}
-              </Label>
+              <Label className="text-xs">Satış Hedefi ($)</Label>
               <Input
                 type="number"
                 step="0.000001"
                 value={pnlSellTarget}
                 onChange={(e) => setPnlSellTarget(e.target.value)}
-                placeholder={positionType === 'short' ? 'Entry\'dan düşük fiyat' : 'Entry\'dan yüksek fiyat'}
+                placeholder="0.00"
                 className="bg-background/50 border-order-green/30 focus:border-order-green"
               />
             </div>
@@ -719,7 +633,6 @@ export const PnLTracker = () => {
               setPnlQuantity('');
               setPnlEntryPrice('');
               setPnlSellTarget('');
-              setPositionType('spot');
               setPnlNotes('');
               setFormKey(prev => prev + 1);
               setShowPnlForm(false);
@@ -745,7 +658,6 @@ export const PnLTracker = () => {
                 setPnlQuantity('');
                 setPnlEntryPrice('');
                 setPnlSellTarget('');
-                setPositionType('spot');
                 setPnlNotes('');
                 setFormKey(prev => prev + 1);
                 setShowPnlForm(true);
@@ -763,23 +675,10 @@ export const PnLTracker = () => {
               const currentValue = position.quantity * currentPrice;
               const entryValue = position.quantity * position.entryPrice;
               const targetValue = position.quantity * position.sellTarget;
-              const unrealizedPnL = calculatePositionPnL(position);
-              
-              // Calculate percentage based on position type
-              let unrealizedPercent = 0;
-              let expectedPercent = 0;
-              
-              if (position.positionType === 'short') {
-                unrealizedPercent = currentPrice > 0 ? ((position.entryPrice / currentPrice) - 1) * 100 : 0;
-                expectedPercent = ((position.entryPrice / position.sellTarget) - 1) * 100;
-              } else {
-                unrealizedPercent = currentPrice > 0 ? ((currentPrice / position.entryPrice) - 1) * 100 : 0;
-                expectedPercent = ((position.sellTarget / position.entryPrice) - 1) * 100;
-              }
-              
-              const expectedProfit = position.positionType === 'short' 
-                ? (position.entryPrice - position.sellTarget) * position.quantity
-                : (position.sellTarget - position.entryPrice) * position.quantity;
+              const unrealizedPnL = currentValue - entryValue;
+              const unrealizedPercent = currentPrice > 0 ? ((currentPrice / position.entryPrice) - 1) * 100 : 0;
+              const expectedProfit = (position.sellTarget - position.entryPrice) * position.quantity;
+              const expectedPercent = ((position.sellTarget / position.entryPrice) - 1) * 100;
               const isProfit = unrealizedPnL > 0;
               const isTargetReached = position.targetReached;
               
@@ -817,15 +716,6 @@ export const PnLTracker = () => {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-foreground text-lg">{position.tokenSymbol}</h4>
-                          <span className={`text-xs font-bold px-2 py-1 rounded border ${
-                            position.positionType === 'long' 
-                              ? 'text-order-green bg-order-green/10 border-order-green/30'
-                              : position.positionType === 'short'
-                              ? 'text-red-500 bg-red-500/10 border-red-500/30'
-                              : 'text-blue-500 bg-blue-500/10 border-blue-500/30'
-                          }`}>
-                            {position.positionType.toUpperCase()}
-                          </span>
                           <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                             {position.quantity.toLocaleString()} adet
                           </span>
@@ -921,14 +811,10 @@ export const PnLTracker = () => {
                                   <div 
                                     className={`h-2 rounded-full transition-all duration-500 ${
                                       isTargetReached ? 'bg-order-green animate-pulse' : 
-                                      position.positionType === 'short'
-                                        ? currentPrice <= position.sellTarget ? 'bg-order-green' : 'bg-red-500'
-                                        : currentPrice >= position.sellTarget ? 'bg-order-green' : 'bg-corporate-blue'
+                                      currentPrice >= position.sellTarget ? 'bg-order-green' : 'bg-corporate-blue'
                                     }`}
                                     style={{ 
-                                      width: position.positionType === 'short'
-                                        ? `${Math.min(Math.max(((position.entryPrice - currentPrice) / (position.entryPrice - position.sellTarget)) * 100, 0), 100)}%`
-                                        : `${Math.min(Math.max((currentPrice / position.sellTarget) * 100, 0), 100)}%`
+                                      width: `${Math.min(Math.max((currentPrice / position.sellTarget) * 100, 0), 100)}%` 
                                     }}
                                   />
                                 </div>
