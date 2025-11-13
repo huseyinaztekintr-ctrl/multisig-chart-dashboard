@@ -207,13 +207,14 @@ const Index = () => {
           {/* Center Column */}
           <div className="col-span-12 lg:col-span-5 flex flex-col gap-4 lg:overflow-y-auto">
             <CirculatingSupplyComparison />
-            <PositionNotes />
-            <DebtBalance />
             
             {/* Multisig History Chart - Desktop Only */}
-            <div className="hidden lg:block max-h-[280px] mb-6">
+            <div className="hidden lg:block max-h-[280px]">
               <MultisigHistoryChart />
             </div>
+            
+            <PositionNotes />
+            <DebtBalance />
           </div>
 
           {/* Right Column */}
