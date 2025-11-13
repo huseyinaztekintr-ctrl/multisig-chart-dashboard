@@ -966,27 +966,27 @@ export const MultisigHistoryChart = () => {
 
               <div className="flex gap-2 flex-wrap items-center border-t border-border/30 pt-2 mt-2">
                 <button
-                  onClick={() => setActiveTab('line')}
+                  onClick={() => setChartType('line')}
                   className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                    activeTab === 'line' 
+                    chartType === 'line' 
                       ? 'bg-corporate-blue text-white' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
                   <TrendingUp className="w-3 h-3" />
-                  {isMobile ? (activeTab === 'line' ? '✓' : '') : `Çizgi ${activeTab === 'line' ? '✓' : ''}`}
+                  {isMobile ? (chartType === 'line' ? '✓' : '') : `Çizgi ${chartType === 'line' ? '✓' : ''}`}
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('area')}
+                  onClick={() => setChartType('area')}
                   className={`px-2 py-1 rounded text-xs font-medium transition-all ${
-                    activeTab === 'area' 
+                    chartType === 'area' 
                       ? 'bg-corporate-blue text-white' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
                   <AreaChart className="w-3 h-3" />
-                  {isMobile ? (activeTab === 'area' ? '✓' : '') : `Alan ${activeTab === 'area' ? '✓' : ''}`}
+                  {isMobile ? (chartType === 'area' ? '✓' : '') : `Alan ${chartType === 'area' ? '✓' : ''}`}
                 </button>
                 
                 <button
@@ -1051,7 +1051,7 @@ export const MultisigHistoryChart = () => {
                     
                     if (!visibleMetrics.has(symbol)) return null;
                     
-                    return activeTab === 'area' ? (
+                    return chartType === 'area' ? (
                       <Area
                         key={`${symbol}-area`}
                         type="monotone"
@@ -1078,7 +1078,7 @@ export const MultisigHistoryChart = () => {
                   })}
                   
                   {visibleMetrics.has('try') && (
-                    activeTab === 'area' ? (
+                    chartType === 'area' ? (
                       <Area
                         key="try-area"
                         type="monotone"
