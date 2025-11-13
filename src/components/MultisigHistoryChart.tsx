@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Area } from 'recharts';
-import { TrendingUp, Database, BarChart3, Maximize2, Minimize2 } from 'lucide-react';
+import { TrendingUp, Database, BarChart3, Maximize2, Minimize2, AreaChart } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getTokenBalance } from '@/utils/blockchain';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
