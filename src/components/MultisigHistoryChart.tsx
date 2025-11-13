@@ -847,7 +847,7 @@ export const MultisigHistoryChart = () => {
 
   return (
     <>
-      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative overflow-visible ${isMobile ? 'mx-2' : ''}`}>
+      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative overflow-hidden ${isMobile ? 'mx-2' : ''}`}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-corporate-blue" />
