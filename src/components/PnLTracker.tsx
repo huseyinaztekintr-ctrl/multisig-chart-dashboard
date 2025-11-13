@@ -144,6 +144,38 @@ export const PnLTracker = () => {
       return;
     }
 
+    // Validate numeric inputs
+    const quantity = parseFloat(pnlQuantity);
+    const entryPrice = parseFloat(pnlEntryPrice);
+    const sellTarget = parseFloat(pnlSellTarget);
+
+    if (isNaN(quantity) || quantity <= 0) {
+      toast({
+        title: 'Hata',
+        description: 'Geçerli bir adet giriniz.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isNaN(entryPrice) || entryPrice <= 0) {
+      toast({
+        title: 'Hata',
+        description: 'Geçerli bir alım fiyatı giriniz.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isNaN(sellTarget) || sellTarget <= entryPrice) {
+      toast({
+        title: 'Hata',
+        description: 'Satış hedefi alım fiyatından yüksek olmalı.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const selectedToken = getEnabledTokens().find(t => t.symbol === pnlTokenSymbol);
     if (!selectedToken) {
       toast({
@@ -154,46 +186,78 @@ export const PnLTracker = () => {
       return;
     }
 
+    // Generate unique ID with timestamp and random component
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     const newPosition: PnLPosition = {
-      id: Date.now().toString(),
+      id: uniqueId,
       tokenSymbol: pnlTokenSymbol,
       tokenAddress: selectedToken.address,
       tokenPairAddress: selectedToken.pairAddress || undefined,
       tokenLogo: selectedToken.logo,
-      quantity: parseFloat(pnlQuantity),
-      entryPrice: parseFloat(pnlEntryPrice),
-      sellTarget: parseFloat(pnlSellTarget),
+      quantity,
+      entryPrice,
+      sellTarget,
       notes: pnlNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
 
-    const updatedPositions = [...pnlPositions, newPosition];
-    setPnlPositions(updatedPositions);
-    localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+    try {
+      const updatedPositions = [...pnlPositions, newPosition];
+      setPnlPositions(updatedPositions);
+      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
 
-    // Reset form
-    setPnlTokenSymbol('');
-    setPnlQuantity('');
-    setPnlEntryPrice('');
-    setPnlSellTarget('');
-    setPnlNotes('');
-    setShowPnlForm(false);
+      // Reset form after successful save
+      const tokenSymbolForToast = pnlTokenSymbol;
+      setPnlTokenSymbol('');
+      setPnlQuantity('');
+      setPnlEntryPrice('');
+      setPnlSellTarget('');
+      setPnlNotes('');
+      setShowPnlForm(false);
 
-    toast({
-      title: 'Başarılı',
-      description: `${pnlTokenSymbol} pozisyonu eklendi.`,
-    });
+      toast({
+        title: 'Başarılı',
+        description: `${tokenSymbolForToast} pozisyonu eklendi. Toplam ${updatedPositions.length} pozisyon.`,
+      });
+    } catch (error) {
+      console.error('Error adding P&L position:', error);
+      toast({
+        title: 'Hata',
+        description: 'Pozisyon eklenirken bir hata oluştu.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const deletePnlPosition = (id: string) => {
-    const updatedPositions = pnlPositions.filter(p => p.id !== id);
-    setPnlPositions(updatedPositions);
-    localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-    
-    toast({
-      title: 'Başarılı',
-      description: 'Pozisyon silindi.',
-    });
+    try {
+      const positionToDelete = pnlPositions.find(p => p.id === id);
+      if (!positionToDelete) {
+        toast({
+          title: 'Hata',
+          description: 'Silinecek pozisyon bulunamadı.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const updatedPositions = pnlPositions.filter(p => p.id !== id);
+      setPnlPositions(updatedPositions);
+      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+      
+      toast({
+        title: 'Başarılı',
+        description: `${positionToDelete.tokenSymbol} pozisyonu silindi. Kalan: ${updatedPositions.length} pozisyon.`,
+      });
+    } catch (error) {
+      console.error('Error deleting P&L position:', error);
+      toast({
+        title: 'Hata',
+        description: 'Pozisyon silinirken bir hata oluştu.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Calculate summary statistics
