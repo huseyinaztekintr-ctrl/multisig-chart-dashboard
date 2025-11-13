@@ -609,7 +609,7 @@ export const MultisigHistoryChart = () => {
         </div>
       </div>
       
-      <div className="flex-1 min-h-0">
+      <div className={`flex-1 ${isFullscreen ? 'min-h-[500px]' : 'min-h-0'}`}>
         <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -875,7 +875,7 @@ export const MultisigHistoryChart = () => {
       </Card>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto p-6">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -895,7 +895,9 @@ export const MultisigHistoryChart = () => {
             </Button>
           </div>
           
-          {renderChartContent()}
+          <div className="flex-1 flex flex-col min-h-0">
+            {renderChartContent()}
+          </div>
         </DialogContent>
       </Dialog>
     </>
