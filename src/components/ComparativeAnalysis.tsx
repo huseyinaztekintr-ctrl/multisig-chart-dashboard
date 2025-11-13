@@ -263,42 +263,42 @@ const ComparativeAnalysisComponent = () => {
                   </span>
                 </div>
                 {/* Crypto values in single row */}
-                <div className="flex items-center gap-1 text-[9px] overflow-hidden">
-                  <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-2 text-xs overflow-hidden">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.circulatingValueAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.circulatingValueBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.circulatingValueArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src={selectedToken.logo} 
                       alt={selectedToken.symbol} 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground font-medium">
                       {data.circulatingValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -332,42 +332,42 @@ const ComparativeAnalysisComponent = () => {
                   </div>
                 )}
                 {/* Crypto values in single row */}
-                <div className="flex items-center gap-1 text-[9px] overflow-hidden">
-                  <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-2 text-xs overflow-hidden">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.multisigTotalValueAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.multisigTotalValueBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground">
                       {data.multisigTotalValueArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1">
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
                       alt="ORDER" 
-                      className="w-1.5 h-1.5"
+                      className="w-3 h-3"
                     />
                     <span className="text-muted-foreground font-medium">
                       {data.multisigTotalValueOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -401,12 +401,12 @@ const ComparativeAnalysisComponent = () => {
                   ₺{data.differenceTry.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
                 </div>
                 {/* Compact crypto values in single row */}
-                <div className="flex items-center gap-1 text-[8px] overflow-hidden">
+                <div className="flex items-center gap-1.5 text-[10px] overflow-hidden">
                   <div className="flex items-center gap-0.5">
                     <img 
                       src="https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png" 
                       alt="AVAX" 
-                      className="w-1.5 h-1.5"
+                      className="w-2.5 h-2.5"
                     />
                     <span className="text-muted-foreground">
                       {data.differenceAvax.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -416,7 +416,7 @@ const ComparativeAnalysisComponent = () => {
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/OxAf5qYKdQQppZBG_QoYolSAdZMTGfprsooSFp8pPRg/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYml0Y29pbmJfMzIuYTlhMmIxOGJhYjQ1LnBuZw" 
                       alt="BTC" 
-                      className="w-1.5 h-1.5"
+                      className="w-2.5 h-2.5"
                     />
                     <span className="text-muted-foreground">
                       {data.differenceBtc.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}
@@ -426,7 +426,7 @@ const ComparativeAnalysisComponent = () => {
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/GrDCmdCkaNUaM4ZYPunjryrcLAPfBKsWp05O1rogplQ/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvYXJlbmF0b2tlbi4zNjQ5YjNhMThhMDQucG5n" 
                       alt="ARENA" 
-                      className="w-1.5 h-1.5"
+                      className="w-2.5 h-2.5"
                     />
                     <span className="text-muted-foreground">
                       {data.differenceArena.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
@@ -436,7 +436,7 @@ const ComparativeAnalysisComponent = () => {
                     <img 
                       src="https://imgproxy-mainnet.routescan.io/wjTZbb293__lBlOaQHRI0yK40KScu1PN6oCjFYV2l14/pr:thumb_32/aHR0cHM6Ly9jbXMtY2RuLmF2YXNjYW4uY29tL2NtczIvcHlyYW1pZGxpcXVpZGl0eW9yZGVyLjA5NWFjNDdlNjc5YS53ZWJw" 
                       alt="ORDER" 
-                      className="w-1.5 h-1.5"
+                      className="w-2.5 h-2.5"
                     />
                     <span className="text-muted-foreground font-medium">
                       {data.differenceOrder.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}
