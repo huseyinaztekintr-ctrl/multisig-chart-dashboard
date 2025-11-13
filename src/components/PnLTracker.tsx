@@ -43,6 +43,7 @@ export const PnLTracker = () => {
   const [pnlEntryPrice, setPnlEntryPrice] = useState('');
   const [pnlSellTarget, setPnlSellTarget] = useState('');
   const [pnlNotes, setPnlNotes] = useState('');
+  const [formKey, setFormKey] = useState(0); // For forcing form re-render
 
   // Load P&L positions from localStorage
   useEffect(() => {
@@ -209,11 +210,17 @@ export const PnLTracker = () => {
 
       // Reset form after successful save
       const tokenSymbolForToast = pnlTokenSymbol;
-      setPnlTokenSymbol('');
-      setPnlQuantity('');
-      setPnlEntryPrice('');
-      setPnlSellTarget('');
-      setPnlNotes('');
+      
+      // Force form reset and re-render
+      setTimeout(() => {
+        setPnlTokenSymbol('');
+        setPnlQuantity('');
+        setPnlEntryPrice('');
+        setPnlSellTarget('');
+        setPnlNotes('');
+        setFormKey(prev => prev + 1); // Force re-render
+      }, 0);
+      
       setShowPnlForm(false);
 
       toast({
@@ -379,7 +386,18 @@ export const PnLTracker = () => {
         </div>
         <Button
           size="sm"
-          onClick={() => setShowPnlForm(!showPnlForm)}
+          onClick={() => {
+            if (!showPnlForm) {
+              // Clear form when opening
+              setPnlTokenSymbol('');
+              setPnlQuantity('');
+              setPnlEntryPrice('');
+              setPnlSellTarget('');
+              setPnlNotes('');
+              setFormKey(prev => prev + 1);
+            }
+            setShowPnlForm(!showPnlForm);
+          }}
           className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
         >
           <Plus className="w-4 h-4 mr-1" />
@@ -398,7 +416,7 @@ export const PnLTracker = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label className="text-xs">Token (Multisig Holdings)</Label>
-              <Select value={pnlTokenSymbol} onValueChange={setPnlTokenSymbol}>
+              <Select key={formKey} value={pnlTokenSymbol} onValueChange={setPnlTokenSymbol}>
                 <SelectTrigger>
                   <SelectValue placeholder="Token seçin" />
                 </SelectTrigger>
@@ -467,7 +485,15 @@ export const PnLTracker = () => {
               <Plus className="w-4 h-4 mr-2" />
               Pozisyon Ekle
             </Button>
-            <Button variant="outline" onClick={() => setShowPnlForm(false)} className="border-order-green/30 hover:bg-order-green/10">
+            <Button variant="outline" onClick={() => {
+              setPnlTokenSymbol('');
+              setPnlQuantity('');
+              setPnlEntryPrice('');
+              setPnlSellTarget('');
+              setPnlNotes('');
+              setFormKey(prev => prev + 1);
+              setShowPnlForm(false);
+            }} className="border-order-green/30 hover:bg-order-green/10">
               İptal
             </Button>
           </div>
@@ -483,7 +509,16 @@ export const PnLTracker = () => {
               Henüz pozisyon eklenmemiş
             </p>
             <Button
-              onClick={() => setShowPnlForm(true)}
+              onClick={() => {
+                // Clear form when opening
+                setPnlTokenSymbol('');
+                setPnlQuantity('');
+                setPnlEntryPrice('');
+                setPnlSellTarget('');
+                setPnlNotes('');
+                setFormKey(prev => prev + 1);
+                setShowPnlForm(true);
+              }}
               className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
             >
               <Plus className="w-4 h-4 mr-2" />
