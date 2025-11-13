@@ -610,7 +610,7 @@ export const MultisigHistoryChart = () => {
       </div>
       
       <div className={`flex-1 ${isFullscreen ? 'min-h-[500px]' : 'min-h-0'}`}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer key={`chart-${isFullscreen}`} width="100%" height="100%">
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
           <XAxis 
@@ -875,7 +875,7 @@ export const MultisigHistoryChart = () => {
       </Card>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
+        <DialogContent key={isFullscreen ? 'fullscreen' : 'normal'} className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -896,7 +896,188 @@ export const MultisigHistoryChart = () => {
           </div>
           
           <div className="flex-1 flex flex-col min-h-0">
-            {renderChartContent()}
+            <div className="w-full">
+              <div className="flex gap-2 flex-wrap mb-2">
+                {activeTokens.map((token, index) => {
+                  const symbol = token.symbol.toUpperCase();
+                  const perf = performanceComparison[symbol] || 0;
+                  const color = getTokenColor(symbol, index);
+                  
+                  return (
+                    <button
+                      key={symbol}
+                      onClick={() => toggleMetric(symbol)}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
+                        visibleMetrics.has(symbol)
+                          ? 'text-white'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      } ${dominantAsset === symbol ? 'ring-4 shadow-lg scale-110' : ''}`}
+                      style={visibleMetrics.has(symbol) ? { 
+                        backgroundColor: color,
+                        boxShadow: dominantAsset === symbol ? `0 0 20px ${color}60` : undefined
+                      } : undefined}
+                    >
+                      <img 
+                        src={token.logo} 
+                        alt={symbol} 
+                        className="w-3 h-3 rounded-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                      <span className={`text-sm font-bold ${perf >= 0 ? 'text-white' : 'opacity-70'}`}>
+                        {symbol} {perf >= 0 ? '↗' : '↘'}{Math.abs(perf).toFixed(1)}%
+                      </span>
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => toggleMetric('try')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    visibleMetrics.has('try')
+                      ? 'bg-[#e30a17] text-white'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  } ${dominantAsset === 'try' ? 'ring-4 ring-[#e30a17] shadow-[0_0_20px_rgba(227,10,23,0.6)] scale-110' : ''}`}
+                >
+                  ₺ TRY
+                  <span className={`text-sm font-bold ${performanceComparison.try >= 0 ? 'text-white' : 'text-red-900'}`}>
+                    {performanceComparison.try >= 0 ? '↗' : '↘'}{Math.abs(performanceComparison.try || 0).toFixed(1)}%
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex gap-2 flex-wrap items-center border-t border-border/30 pt-2 mt-2">
+                <button
+                  onClick={() => setActiveTab('line')}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'line' 
+                      ? 'bg-corporate-blue text-white' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  {isMobile ? (activeTab === 'line' ? '✓' : '') : `Çizgi ${activeTab === 'line' ? '✓' : ''}`}
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab('area')}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                    activeTab === 'area' 
+                      ? 'bg-corporate-blue text-white' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <AreaChart className="w-3 h-3" />
+                  {isMobile ? (activeTab === 'area' ? '✓' : '') : `Alan ${activeTab === 'area' ? '✓' : ''}`}
+                </button>
+                
+                <button
+                  onClick={() => setShowVolume(!showVolume)}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                    showVolume 
+                      ? 'bg-corporate-blue text-white' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <Database className="w-3 h-3" />
+                  {isMobile ? (showVolume ? '✓' : '') : `Hacim ${showVolume ? '✓' : ''}`}
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 min-h-[500px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    interval="preserveStartEnd"
+                    minTickGap={30}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    scale="log"
+                    domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+                      return value.toFixed(2);
+                    }}
+                  />
+                  
+                  {activeTokens.map((token, index) => {
+                    const symbol = token.symbol.toUpperCase();
+                    const color = getTokenColor(symbol, index);
+                    
+                    if (!visibleMetrics.has(symbol)) return null;
+                    
+                    return activeTab === 'area' ? (
+                      <Area
+                        key={`${symbol}-area`}
+                        type="monotone"
+                        dataKey={`value${symbol}`}
+                        name={symbol}
+                        stroke={color}
+                        fill={`url(#gradient-${symbol})`}
+                        strokeWidth={dominantAsset === symbol ? 5 : 2}
+                        dot={false}
+                        connectNulls
+                      />
+                    ) : (
+                      <Line
+                        key={`${symbol}-line`}
+                        type="monotone"
+                        dataKey={`value${symbol}`}
+                        name={symbol}
+                        stroke={color}
+                        strokeWidth={dominantAsset === symbol ? 5 : 2}
+                        dot={false}
+                        connectNulls
+                      />
+                    );
+                  })}
+                  
+                  {visibleMetrics.has('try') && (
+                    activeTab === 'area' ? (
+                      <Area
+                        key="try-area"
+                        type="monotone"
+                        dataKey="valueTRY"
+                        name="TRY"
+                        stroke="#e30a17"
+                        fill="url(#gradient-TRY)"
+                        strokeWidth={dominantAsset === 'try' ? 5 : 2}
+                        dot={false}
+                        connectNulls
+                      />
+                    ) : (
+                      <Line
+                        key="try-line"
+                        type="monotone"
+                        dataKey="valueTRY"
+                        name="TRY"
+                        stroke="#e30a17"
+                        strokeWidth={dominantAsset === 'try' ? 5 : 2}
+                        dot={false}
+                        connectNulls
+                      />
+                    )
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <p className="text-xs text-muted-foreground mt-2 flex-shrink-0">
+              * Her 1 dakikada bir fiyat ve bakiye kayıtları tarayıcınızda saklanıyor
+            </p>
           </div>
         </DialogContent>
       </Dialog>
