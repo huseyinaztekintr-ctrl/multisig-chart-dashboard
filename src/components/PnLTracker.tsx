@@ -286,12 +286,8 @@ export const PnLTracker = () => {
 
   const deletePnlPosition = (id: string) => {
     try {
-      console.log('Delete called with ID:', id);
-      console.log('Current positions:', pnlPositions.map(p => ({ id: p.id, symbol: p.tokenSymbol })));
-      
       const positionToDelete = pnlPositions.find(p => p.id === id);
       if (!positionToDelete) {
-        console.log('Position not found!');
         toast({
           title: 'Hata',
           description: 'Silinecek pozisyon bulunamadı.',
@@ -300,19 +296,10 @@ export const PnLTracker = () => {
         return;
       }
 
-      console.log('Deleting position:', positionToDelete);
       const updatedPositions = pnlPositions.filter(p => p.id !== id);
-      console.log('Updated positions:', updatedPositions);
-      
-      // Force state update
-      setPnlPositions([]);
-      setTimeout(() => {
-        setPnlPositions(updatedPositions);
-      }, 0);
-      
+      setPnlPositions(updatedPositions);
       localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
       
-      console.log('Position deleted successfully');
       toast({
         title: 'Başarılı',
         description: `${positionToDelete.tokenSymbol} pozisyonu silindi. Kalan: ${updatedPositions.length} pozisyon.`,
