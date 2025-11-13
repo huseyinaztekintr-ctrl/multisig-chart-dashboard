@@ -612,7 +612,23 @@ export const MultisigHistoryChart = () => {
       <div className={`flex-1 ${isFullscreen ? 'min-h-[500px]' : 'min-h-0'}`}>
         <ResponsiveContainer key={`chart-${isFullscreen}`} width="100%" height="100%">
         <ComposedChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <defs>
+            {activeTokens.map((token, index) => {
+              const symbol = token.symbol.toUpperCase();
+              const color = getTokenColor(symbol, index);
+              return (
+                <linearGradient key={`gradient-${symbol}`} id={`gradient-${symbol}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
+                </linearGradient>
+              );
+            })}
+            <linearGradient id="gradient-TRY" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#e30a17" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#e30a17" stopOpacity={0.1}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokedasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
           <XAxis 
             dataKey="date" 
             stroke="hsl(var(--muted-foreground))"
@@ -990,6 +1006,22 @@ export const MultisigHistoryChart = () => {
             <div className="flex-1 min-h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={chartData}>
+                  <defs>
+                    {activeTokens.map((token, index) => {
+                      const symbol = token.symbol.toUpperCase();
+                      const color = getTokenColor(symbol, index);
+                      return (
+                        <linearGradient key={`gradient-${symbol}`} id={`gradient-${symbol}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
+                        </linearGradient>
+                      );
+                    })}
+                    <linearGradient id="gradient-TRY" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#e30a17" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#e30a17" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis 
                     dataKey="date" 
