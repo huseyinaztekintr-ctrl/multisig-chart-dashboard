@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Plus, Trash2, BarChart3, Target, Eye } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Trash2, BarChart3, Target, Eye, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -267,6 +267,25 @@ export const PnLTracker = () => {
     }
   };
 
+  const clearAllPositions = () => {
+    try {
+      setPnlPositions([]);
+      localStorage.removeItem(PNL_POSITIONS_STORAGE_KEY);
+      
+      toast({
+        title: 'Başarılı',
+        description: 'Tüm pozisyonlar ve cache temizlendi.',
+      });
+    } catch (error) {
+      console.error('Error clearing positions:', error);
+      toast({
+        title: 'Hata',
+        description: 'Pozisyonlar temizlenirken bir hata oluştu.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Calculate summary statistics
   const totalPositions = pnlPositions.length;
   const activePositions = pnlPositions.filter(p => !p.targetReached).length;
@@ -383,26 +402,42 @@ export const PnLTracker = () => {
         <div className="flex items-center gap-2">
           <TrendingUp className="w-6 h-6 text-order-green animate-pulse-slow" />
           <h3 className="text-lg font-bold text-foreground">P&L Tracker</h3>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            Cache: {totalPositions} pozisyon
+          </span>
         </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            if (!showPnlForm) {
-              // Clear form when opening
-              setPnlTokenSymbol('');
-              setPnlQuantity('');
-              setPnlEntryPrice('');
-              setPnlSellTarget('');
-              setPnlNotes('');
-              setFormKey(prev => prev + 1);
-            }
-            setShowPnlForm(!showPnlForm);
-          }}
-          className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Yeni Pozisyon
-        </Button>
+        <div className="flex gap-2">
+          {totalPositions > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={clearAllPositions}
+              className="border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 text-red-500 hover:text-red-400"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Cache Temizle
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!showPnlForm) {
+                // Clear form when opening
+                setPnlTokenSymbol('');
+                setPnlQuantity('');
+                setPnlEntryPrice('');
+                setPnlSellTarget('');
+                setPnlNotes('');
+                setFormKey(prev => prev + 1);
+              }
+              setShowPnlForm(!showPnlForm);
+            }}
+            className="bg-gradient-to-r from-order-green to-emerald-500 hover:from-order-green/90 hover:to-emerald-500/90 text-white shadow-lg shadow-order-green/30"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Yeni Pozisyon
+          </Button>
+        </div>
       </div>
 
       {/* P&L Position Form */}
@@ -712,8 +747,13 @@ export const PnLTracker = () => {
         )}
       </div>
 
-              <div className="text-xs text-muted-foreground italic p-3 bg-order-green/5 rounded-lg border border-order-green/20 mt-4">
-                💡 <strong>Geliştirilecek:</strong> Gerçek zamanlı fiyat güncellemeleri, portfolio özeti ve gelişmiş analitik özellikleri yakında eklenecek!
+              <div className="text-xs text-muted-foreground italic p-3 bg-order-green/5 rounded-lg border border-order-green/20 mt-4 space-y-2">
+                <p>
+                  💡 <strong>Geliştirilecek:</strong> Gerçek zamanlı fiyat güncellemeleri, portfolio özeti ve gelişmiş analitik özellikleri yakında eklenecek!
+                </p>
+                <p className="text-muted-foreground/60">
+                  🔧 <strong>Debug:</strong> LocalStorage Key: '{PNL_POSITIONS_STORAGE_KEY}' | Stored: {localStorage.getItem(PNL_POSITIONS_STORAGE_KEY) ? 'Yes' : 'No'} | Count: {totalPositions}
+                </p>
               </div>
             </Card>
           </div>
