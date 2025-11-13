@@ -609,7 +609,7 @@ export const MultisigHistoryChart = () => {
         </div>
       </div>
       
-      <div className="flex-1 min-h-[400px]">
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -840,16 +840,12 @@ export const MultisigHistoryChart = () => {
         </ComposedChart>
       </ResponsiveContainer>
       </div>
-      
-      <p className="text-xs text-muted-foreground mt-2">
-        * Her 1 dakikada bir fiyat ve bakiye kayıtları tarayıcınızda saklanıyor
-      </p>
     </>
   );
 
   return (
     <>
-      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative h-full flex flex-col ${isMobile ? 'mx-2' : ''}`}>
+      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative h-full flex flex-col overflow-hidden ${isMobile ? 'mx-2' : ''}`}>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -872,6 +868,10 @@ export const MultisigHistoryChart = () => {
         </div>
         
         {renderChartContent()}
+        
+        <p className="text-xs text-muted-foreground mt-2 flex-shrink-0">
+          * Her 1 dakikada bir fiyat ve bakiye kayıtları tarayıcınızda saklanıyor
+        </p>
       </Card>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
