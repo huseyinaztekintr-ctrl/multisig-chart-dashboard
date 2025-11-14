@@ -370,21 +370,41 @@ export const PnLTracker = () => {
   };
 
   const closePosition = (positionId: string) => {
+    console.log('=== CLOSE POSITION DEBUG ===');
+    console.log('Attempting to close position with ID:', positionId);
+    
     const updatedPositions = pnlPositions.map(p => 
-      p.id === positionId 
+      String(p.id) === String(positionId)
         ? { ...p, status: 'CLOSED' as const, lastUpdated: new Date().toISOString() }
         : p
     );
-    setPnlPositions(updatedPositions);
+    
+    console.log('Close operation completed');
+    
+    // Önce localStorage'ı güncelle
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+    
+    // Sonra state'i force update et
+    setPnlPositions([...updatedPositions]);
+    
+    // State'in güncellenmesini garanti etmek için setTimeout kullan
+    setTimeout(() => {
+      setPnlPositions(prev => prev.map(p => 
+        String(p.id) === String(positionId)
+          ? { ...p, status: 'CLOSED' as const, lastUpdated: new Date().toISOString() }
+          : p
+      ));
+    }, 100);
 
-    const closedPosition = pnlPositions.find(p => p.id === positionId);
+    const closedPosition = pnlPositions.find(p => String(p.id) === String(positionId));
     if (closedPosition) {
       toast({
         title: '✅ Pozisyon Kapatıldı',
         description: `${closedPosition.tokenSymbol} ${closedPosition.positionType} pozisyonu kapatıldı.`,
       });
     }
+    
+    console.log('=== END CLOSE DEBUG ===');
   };
 
   const deletePnlPosition = (id: string) => {
@@ -419,10 +439,19 @@ export const PnLTracker = () => {
       return;
     }
     
-    setPnlPositions(updatedPositions);
+    // Önce localStorage'ı güncelle
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
     
+    // Sonra state'i force update et
+    setPnlPositions([...updatedPositions]);
+    
     console.log('Position successfully deleted and saved to localStorage');
+    
+    // State'in güncellenmesini garanti etmek için setTimeout kullan
+    setTimeout(() => {
+      setPnlPositions(prev => prev.filter(p => String(p.id) !== String(id)));
+    }, 100);
+    
     console.log('=== END DELETE DEBUG ===');
     
     toast({
