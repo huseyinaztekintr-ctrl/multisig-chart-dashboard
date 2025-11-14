@@ -54,6 +54,7 @@ export const PnLTracker = () => {
   const [pnlPositions, setPnlPositions] = useState<PnLPosition[]>([]);
   const [showPnlForm, setShowPnlForm] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [renderKey, setRenderKey] = useState(0); // Force re-render key
 
   // P&L form states
   const [pnlTokenSymbol, setPnlTokenSymbol] = useState('');
@@ -408,51 +409,37 @@ export const PnLTracker = () => {
   };
 
   const deletePnlPosition = (id: string) => {
-    console.log('=== DELETE POSITION DEBUG ===');
-    console.log('Attempting to delete position with ID:', id);
-    console.log('Current positions before filter:', pnlPositions.map(p => ({ 
-      id: p.id, 
-      symbol: p.tokenSymbol,
-      idType: typeof p.id,
-      idLength: p.id?.length 
-    })));
+    // HARDCORE DELETE - İlk pozisyon silme problemi için
     
-    // String olarak karşılaştır
-    const updatedPositions = pnlPositions.filter(p => String(p.id) !== String(id));
-    
-    console.log('Updated positions after filter:', updatedPositions.map(p => ({ 
-      id: p.id, 
-      symbol: p.tokenSymbol 
-    })));
-    console.log('Positions removed:', pnlPositions.length - updatedPositions.length);
-    
-    if (pnlPositions.length === updatedPositions.length) {
-      console.log('ERROR: No position was removed! ID mismatch detected.');
-      console.log('Available IDs:', pnlPositions.map(p => `"${p.id}"`));
-      console.log('Requested ID:', `"${id}"`);
-      
-      toast({
-        title: 'Silme Hatası',
-        description: 'Pozisyon bulunamadı. Tümünü Sil butonunu kullanın.',
-        variant: 'destructive',
-      });
-      return;
+    // 1. localStorage'dan tamamen sil
+    const currentData = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+    if (currentData) {
+      const parsed = JSON.parse(currentData);
+      const filtered = parsed.filter((p: { id: string }) => String(p.id) !== String(id));
+      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(filtered));
     }
     
-    // Önce localStorage'ı güncelle
-    localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+    // 2. State'i multiple kez güncelle
+    const updatedPositions = pnlPositions.filter(p => String(p.id) !== String(id));
     
-    // Sonra state'i force update et
+    // Hemen güncelle
     setPnlPositions([...updatedPositions]);
     
-    console.log('Position successfully deleted and saved to localStorage');
+    // Render key'i değiştir (list re-render)
+    setRenderKey(prev => prev + 1);
     
-    // State'in güncellenmesini garanti etmek için setTimeout kullan
+    // 100ms sonra tekrar güncelle
     setTimeout(() => {
       setPnlPositions(prev => prev.filter(p => String(p.id) !== String(id)));
+      setRenderKey(prev => prev + 1);
     }, 100);
     
-    console.log('=== END DELETE DEBUG ===');
+    // 300ms sonra final güncelleme
+    setTimeout(() => {
+      const finalCheck = JSON.parse(localStorage.getItem(PNL_POSITIONS_STORAGE_KEY) || '[]');
+      setPnlPositions([...finalCheck]);
+      setRenderKey(prev => prev + 1);
+    }, 300);
     
     toast({
       title: 'Pozisyon Silindi',
@@ -471,13 +458,22 @@ export const PnLTracker = () => {
     
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
-      console.log(`Removed localStorage key: ${key}`);
     });
     
     // State'i sıfırla
     setPnlPositions([]);
+    setRenderKey(prev => prev + 1);
     
-    console.log('All positions cleared, localStorage cleaned');
+    // Triple update guarantee
+    setTimeout(() => {
+      setPnlPositions([]);
+      setRenderKey(prev => prev + 1);
+    }, 50);
+    
+    setTimeout(() => {
+      setPnlPositions([]);
+      setRenderKey(prev => prev + 1);
+    }, 150);
     
     toast({
       title: 'Tüm Pozisyonlar Temizlendi',
@@ -694,14 +690,14 @@ export const PnLTracker = () => {
                   <p className="text-sm">Long veya Short pozisyon ekleyerek başlayın.</p>
                 </Card>
               ) : (
-                pnlPositions.map((position) => {
+                pnlPositions.map((position, index) => {
                   const currentPrice = position.currentPrice || 0;
                   const pnlPercentage = position.pnlPercentage || 0;
                   const pnlAmount = position.pnlAmount || 0;
                   const isProfitable = pnlAmount > 0;
 
                   return (
-                    <Card key={position.id} className="p-4">
+                    <Card key={`${position.id}-${renderKey}-${index}`} className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         {/* Token Info */}
                         <div className="flex items-center gap-3">
