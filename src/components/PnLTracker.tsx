@@ -16,6 +16,14 @@ import { formatCurrency } from '@/utils/currency';
 
 const PNL_POSITIONS_STORAGE_KEY = 'order-pnl-positions-v2';
 
+// Sayı formatlama fonksiyonu
+const formatNumber = (num: number, decimals = 2): string => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(num);
+};
+
 interface PnLPosition {
   id: string;
   tokenSymbol: string;
@@ -58,15 +66,75 @@ export const PnLTracker = () => {
   const [pnlAlertsEnabled, setPnlAlertsEnabled] = useState(true);
   const [pnlAlarmSound, setPnlAlarmSound] = useState(true);
 
-  // Load P&L positions from localStorage
+  // Load P&L positions from localStorage with migration
   useEffect(() => {
-    const savedPnlPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+    // Eski storage key'lerini kontrol et
+    const oldKey1 = 'order-pnl-positions';
+    const oldKey2 = 'order-pnl-positions-v1';
+    
+    let savedPnlPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+    
+    // Yeni key'de veri yoksa, eski key'leri kontrol et
+    if (!savedPnlPositions) {
+      const oldData1 = localStorage.getItem(oldKey1);
+      const oldData2 = localStorage.getItem(oldKey2);
+      
+      savedPnlPositions = oldData2 || oldData1;
+      
+      // Eski verileri temizle
+      if (savedPnlPositions) {
+        localStorage.removeItem(oldKey1);
+        localStorage.removeItem(oldKey2);
+      }
+    }
+    
     if (savedPnlPositions) {
       try {
         const parsed = JSON.parse(savedPnlPositions);
-        setPnlPositions(parsed);
+        
+        // Eski format veriyi yeni formata migrate et
+        const migratedPositions = parsed.map((position: Partial<PnLPosition> & { sellTarget?: number }) => {
+          // Eski format kontrolü
+          if (position.sellTarget && !position.positionType) {
+            return {
+              ...position,
+              positionType: 'LONG', // Eski veriler sadece LONG olabilir
+              targets: {
+                takeProfit: position.sellTarget,
+                stopLoss: undefined
+              },
+              alertsEnabled: true,
+              alarmSound: true,
+              status: position.targetReached ? 'ALARM_TRIGGERED' : 'ACTIVE',
+              pnlPercentage: 0,
+              pnlAmount: 0
+            };
+          }
+          
+          // Eksik alanları tamamla
+          return {
+            ...position,
+            positionType: position.positionType || 'LONG',
+            targets: position.targets || {},
+            alertsEnabled: position.alertsEnabled ?? true,
+            alarmSound: position.alarmSound ?? true,
+            status: position.status || (position.targetReached ? 'ALARM_TRIGGERED' : 'ACTIVE'),
+            pnlPercentage: position.pnlPercentage || 0,
+            pnlAmount: position.pnlAmount || 0
+          };
+        });
+        
+        setPnlPositions(migratedPositions);
+        
+        // Migrate edilmiş veriyi kaydet
+        localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(migratedPositions));
+        
+        console.log('P&L positions migrated to new format:', migratedPositions.length);
+        
       } catch (error) {
         console.error('Error parsing saved P&L positions:', error);
+        // Hatalı veriyi temizle
+        localStorage.removeItem(PNL_POSITIONS_STORAGE_KEY);
       }
     }
   }, []);
@@ -107,14 +175,14 @@ export const PnLTracker = () => {
     
     toast({
       title: isProfit ? '🎯 Take Profit Tetiklendi!' : '⚠️ Stop Loss Tetiklendi!',
-      description: `${position.tokenSymbol} ${position.positionType} - Hedef: $${targetPrice} | Mevcut: $${currentPrice.toFixed(4)}`,
+      description: `${position.tokenSymbol} ${position.positionType} - Hedef: $${formatNumber(targetPrice, 4)} | Mevcut: $${formatNumber(currentPrice, 4)}`,
       variant: isProfit ? 'default' : 'destructive',
     });
 
     // Browser notification (eğer izin verilmişse)
     if (Notification.permission === 'granted') {
       new Notification(`${position.tokenSymbol} ${targetType === 'takeProfit' ? 'Take Profit' : 'Stop Loss'}`, {
-        body: `${position.positionType} pozisyonu tetiklendi - $${currentPrice.toFixed(4)}`,
+        body: `${position.positionType} pozisyonu tetiklendi - $${formatNumber(currentPrice, 4)}`,
         icon: position.tokenLogo,
       });
     }
@@ -320,13 +388,30 @@ export const PnLTracker = () => {
   };
 
   const deletePnlPosition = (id: string) => {
+    console.log('Deleting position with ID:', id);
+    console.log('Current positions:', pnlPositions.map(p => ({ id: p.id, symbol: p.tokenSymbol })));
+    
     const updatedPositions = pnlPositions.filter(p => p.id !== id);
+    console.log('Updated positions:', updatedPositions.map(p => ({ id: p.id, symbol: p.tokenSymbol })));
+    
     setPnlPositions(updatedPositions);
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
     
     toast({
       title: 'Pozisyon Silindi',
       description: `Pozisyon başarıyla silindi. Kalan: ${updatedPositions.length} pozisyon.`,
+    });
+  };
+
+  const clearAllPositions = () => {
+    setPnlPositions([]);
+    localStorage.removeItem(PNL_POSITIONS_STORAGE_KEY);
+    localStorage.removeItem('order-pnl-positions');
+    localStorage.removeItem('order-pnl-positions-v1');
+    
+    toast({
+      title: 'Tüm Pozisyonlar Temizlendi',
+      description: 'Tüm pozisyonlar ve cache tamamen temizlendi.',
     });
   };
 
@@ -372,7 +457,7 @@ export const PnLTracker = () => {
               </Badge>
             )}
             <span className={totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}>
-              {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+              {totalPnL >= 0 ? '+' : ''}${formatNumber(totalPnL)}
             </span>
             <Eye className="w-3 h-3" />
           </div>
@@ -398,13 +483,24 @@ export const PnLTracker = () => {
                 <span>Kapalı: <strong className="text-gray-500">{closedPositions}</strong></span>
                 <span>Alarm: <strong className="text-orange-500">{alarmTriggeredPositions}</strong></span>
                 <span className={`font-bold ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  P&L: {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+                  P&L: {totalPnL >= 0 ? '+' : ''}${formatNumber(totalPnL)}
                 </span>
               </div>
-              <Button onClick={() => setShowPnlForm(!showPnlForm)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Pozisyon Ekle
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllPositions}
+                  className="gap-2 text-red-500 hover:text-red-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Tümünü Sil
+                </Button>
+                <Button onClick={() => setShowPnlForm(!showPnlForm)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Pozisyon Ekle
+                </Button>
+              </div>
             </div>
 
             {/* Add Position Form */}
@@ -554,17 +650,17 @@ export const PnLTracker = () => {
                         {/* Current Price */}
                         <div className="text-center">
                           <div className="text-sm text-muted-foreground">Mevcut</div>
-                          <div className="font-medium">${currentPrice.toFixed(4)}</div>
+                          <div className="font-medium">${formatNumber(currentPrice, 4)}</div>
                         </div>
 
                         {/* P&L */}
                         <div className="text-center">
                           <div className="text-sm text-muted-foreground">P&L</div>
                           <div className={`font-medium ${isProfitable ? 'text-green-500' : 'text-red-500'}`}>
-                            {isProfitable ? '+' : ''}${pnlAmount.toFixed(2)}
+                            {isProfitable ? '+' : ''}${formatNumber(pnlAmount)}
                           </div>
                           <div className={`text-xs ${isProfitable ? 'text-green-500' : 'text-red-500'}`}>
-                            {isProfitable ? '+' : ''}{pnlPercentage.toFixed(2)}%
+                            {isProfitable ? '+' : ''}{formatNumber(pnlPercentage)}%
                           </div>
                         </div>
 
@@ -572,10 +668,10 @@ export const PnLTracker = () => {
                         <div className="text-center">
                           <div className="text-sm text-muted-foreground">Hedefler</div>
                           {position.targets.takeProfit && (
-                            <div className="text-xs text-green-500">TP: ${position.targets.takeProfit}</div>
+                            <div className="text-xs text-green-500">TP: ${formatNumber(position.targets.takeProfit, 4)}</div>
                           )}
                           {position.targets.stopLoss && (
-                            <div className="text-xs text-red-500">SL: ${position.targets.stopLoss}</div>
+                            <div className="text-xs text-red-500">SL: ${formatNumber(position.targets.stopLoss, 4)}</div>
                           )}
                         </div>
 
