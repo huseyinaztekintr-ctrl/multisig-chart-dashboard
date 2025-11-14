@@ -610,7 +610,7 @@ export const MultisigHistoryChart = () => {
       </div>
       
       <div className={`flex-1 ${isFullscreen ? 'min-h-[500px]' : 'min-h-0'}`}>
-        <ResponsiveContainer key={`chart-${isFullscreen}`} width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData}>
           <defs>
             {activeTokens.map((token, index) => {
@@ -861,7 +861,7 @@ export const MultisigHistoryChart = () => {
 
   return (
     <>
-      <Card className={`p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative h-full flex flex-col overflow-hidden ${isMobile ? 'mx-2' : ''}`}>
+      <Card className="p-3 lg:p-5 gradient-card border-corporate-blue/30 glow-blue relative h-full flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -891,7 +891,7 @@ export const MultisigHistoryChart = () => {
       </Card>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent key={isFullscreen ? 'fullscreen' : 'normal'} className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -912,13 +912,7 @@ export const MultisigHistoryChart = () => {
           </div>
           
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="w-full">
-              {/* Debug fullscreen rendering */}
-              <div className="text-xs text-muted-foreground mb-2">
-                Fullscreen: {isFullscreen ? 'true' : 'false'} | Data: {chartData.length} points | ActiveTokens: {activeTokens.length}
-              </div>
-              {renderChartContent()}
-            </div>
+            {renderChartContent()}
           </div>
         </DialogContent>
       </Dialog>

@@ -167,13 +167,6 @@ const Index = () => {
         <div className="lg:h-full flex flex-col lg:grid lg:grid-cols-12 gap-4">
           {/* Mobile Layout: Stack all columns vertically */}
           
-          {/* Chart Section - Mobile Priority */}
-          <div className="lg:hidden w-full mb-6">
-            <div className="h-[300px]">
-              <MultisigHistoryChart />
-            </div>
-          </div>
-
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-3 flex flex-col gap-4 lg:overflow-y-auto lg:max-h-screen">
             {/* Multisig Last Activity */}
@@ -205,16 +198,23 @@ const Index = () => {
           </div>
 
           {/* Center Column */}
-          <div className="col-span-12 lg:col-span-5 flex flex-col gap-4 lg:overflow-y-auto">
+          <div className="col-span-12 lg:col-span-5 order-2 lg:order-none flex flex-col gap-4 lg:overflow-y-auto lg:max-h-screen">
             <CirculatingSupplyComparison />
             
-            {/* Multisig History Chart - Desktop Only */}
-            <div className="hidden lg:block h-[500px] overflow-hidden relative z-0">
+            {/* Multisig History Chart - Her zaman görünür */}
+            <div className="h-[300px] lg:h-[400px] overflow-hidden relative z-0 flex-shrink-0">
               <MultisigHistoryChart />
             </div>
             
-            <PositionNotes />
-            <DebtBalance />
+            {/* Pozisyon Notları - esnek yükseklik */}
+            <div className="flex-shrink-0">
+              <PositionNotes />
+            </div>
+            
+            {/* Borç Dengesi - esnek yükseklik */}
+            <div className="flex-shrink-0">
+              <DebtBalance />
+            </div>
           </div>
 
           {/* Right Column */}
