@@ -12,9 +12,16 @@ dist
 dist-ssr
 *.local
 
-# Electron build output (büyük dosyalar için)
+# Desktop build output (development only)
 dist-electron/
 src-tauri/target/
+
+# Desktop executable files (not needed for web deployment)
+*.exe
+*.dmg
+*.AppImage
+electron.js
+*.bat
 
 # Editor directories and files
 .vscode/*
@@ -23,6 +30,6 @@ src-tauri/target/
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
+*.njsproj*
 *.sln
 *.sw?
