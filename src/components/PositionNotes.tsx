@@ -376,7 +376,7 @@ Haftalık veya 3-4 günde bir DOLUM Yapılır Hack riskine karşı.
       }
     };
 
-    const interval = setInterval(checkAlarms, 30000); // Check every 30 seconds
+    const interval = setInterval(checkAlarms, 120000); // Check every 2 minutes (CPU optimizasyonu)
     checkAlarms(); // Initial check
 
     return () => clearInterval(interval);

@@ -63,7 +63,7 @@ export const ManualTicker = ({ symbol, name, logo, coingeckoId, pairAddress }: M
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchData, 120000); // Update every 2 minutes (CPU optimizasyonu)
     
     return () => clearInterval(interval);
   }, [symbol, coingeckoId, pairAddress]);

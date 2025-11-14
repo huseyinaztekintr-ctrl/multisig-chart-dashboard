@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Electron build output (büyük dosyalar için)
+dist-electron/
+src-tauri/target/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

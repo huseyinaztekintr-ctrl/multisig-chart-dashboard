@@ -4,17 +4,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { InstallPrompt } from "@/components/InstallPrompt";
 import Index from "./pages/Index";
-import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
-// Create a single QueryClient instance
+// Create a single QueryClient instance - CPU optimizasyonu için
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
+      staleTime: 300000, // 5 dakika (daha uzun cache)
+      cacheTime: 600000, // 10 dakika
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: 1, // Daha az retry
     },
   },
 });
@@ -27,10 +29,8 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <InstallPrompt />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/install" element={<Install />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

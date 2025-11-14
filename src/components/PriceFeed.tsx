@@ -32,7 +32,7 @@ const PriceFeedComponent = ({ name, symbol, pairAddress, logo, isTokenAddress = 
 
   useEffect(() => {
     fetchPrice();
-    const interval = setInterval(fetchPrice, 60000); // 1 minute
+    const interval = setInterval(fetchPrice, 180000); // 3 minutes (CPU optimizasyonu için)
     return () => clearInterval(interval);
   }, [fetchPrice]);
 

@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Clock, MapPin } from 'lucide-react';
 
-export const LiveClock = () => {
+const LiveClock = memo(() => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
+    // İlk render'da hemen güncelle
+    setTime(new Date());
+    
+    // Sonra 10 saniyede bir güncelle (CPU tasarrufu için)
     const timer = setInterval(() => {
       setTime(new Date());
-    }, 1000);
+    }, 10000); // 10 saniyede bir güncelle (CPU kullanımını azaltmak için)
 
     return () => clearInterval(timer);
   }, []);
@@ -19,8 +23,7 @@ export const LiveClock = () => {
     return date.toLocaleTimeString('tr-TR', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
-      hour12: false
+      hour12: false // Saniyeyi kaldırıyoruz CPU tasarrufu için
     });
   };
 
@@ -70,4 +73,6 @@ export const LiveClock = () => {
       <div className="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-40 animate-pulse" style={{ animationDelay: '0.5s' }} />
     </div>
   );
-};
+});
+
+export { LiveClock };

@@ -194,7 +194,7 @@ export const SwapBot = () => {
     };
 
     checkGasPrice();
-    const interval = setInterval(checkGasPrice, 10000); // Check every 10 seconds
+    const interval = setInterval(checkGasPrice, 60000); // Check every 60 seconds (CPU optimizasyonu)
 
     return () => clearInterval(interval);
   }, []);

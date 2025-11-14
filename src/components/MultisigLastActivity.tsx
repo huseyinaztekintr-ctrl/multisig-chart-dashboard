@@ -169,7 +169,7 @@ export const MultisigLastActivity = () => {
     };
 
     fetchActivities();
-    const interval = setInterval(fetchActivities, 45000); // Refresh every 45 seconds
+    const interval = setInterval(fetchActivities, 180000); // Refresh every 3 minutes (CPU optimizasyonu)
 
     // Listen for wallet updates
     const handleWalletUpdate = () => {
