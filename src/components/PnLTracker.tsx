@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getEnabledTokens } from './TokenManager';
 import { fetchDexScreenerPrice } from '@/utils/blockchain';
 import { fetchExchangeRates, formatCurrency } from '@/utils/currency';
-import { BinanceTradingPanel } from './BinanceTradingPanel';
 
 const PNL_POSITIONS_STORAGE_KEY = 'order-pnl-positions';
 
@@ -356,9 +355,6 @@ export const PnLTracker = () => {
 
   return (
     <>
-      {/* Binance Trading Panel */}
-      <BinanceTradingPanel />
-      
       {/* Compact Summary Card */}
       <Card 
         className="p-3 gradient-card border-order-green/30 glow-order cursor-pointer hover:border-order-green/50 transition-all"
