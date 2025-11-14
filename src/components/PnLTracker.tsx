@@ -388,14 +388,42 @@ export const PnLTracker = () => {
   };
 
   const deletePnlPosition = (id: string) => {
-    console.log('Deleting position with ID:', id);
-    console.log('Current positions:', pnlPositions.map(p => ({ id: p.id, symbol: p.tokenSymbol })));
+    console.log('=== DELETE POSITION DEBUG ===');
+    console.log('Attempting to delete position with ID:', id);
+    console.log('Current positions before filter:', pnlPositions.map(p => ({ 
+      id: p.id, 
+      symbol: p.tokenSymbol,
+      idType: typeof p.id,
+      idLength: p.id?.length 
+    })));
     
-    const updatedPositions = pnlPositions.filter(p => p.id !== id);
-    console.log('Updated positions:', updatedPositions.map(p => ({ id: p.id, symbol: p.tokenSymbol })));
+    // String olarak karşılaştır
+    const updatedPositions = pnlPositions.filter(p => String(p.id) !== String(id));
+    
+    console.log('Updated positions after filter:', updatedPositions.map(p => ({ 
+      id: p.id, 
+      symbol: p.tokenSymbol 
+    })));
+    console.log('Positions removed:', pnlPositions.length - updatedPositions.length);
+    
+    if (pnlPositions.length === updatedPositions.length) {
+      console.log('ERROR: No position was removed! ID mismatch detected.');
+      console.log('Available IDs:', pnlPositions.map(p => `"${p.id}"`));
+      console.log('Requested ID:', `"${id}"`);
+      
+      toast({
+        title: 'Silme Hatası',
+        description: 'Pozisyon bulunamadı. Tümünü Sil butonunu kullanın.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setPnlPositions(updatedPositions);
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+    
+    console.log('Position successfully deleted and saved to localStorage');
+    console.log('=== END DELETE DEBUG ===');
     
     toast({
       title: 'Pozisyon Silindi',
@@ -404,15 +432,33 @@ export const PnLTracker = () => {
   };
 
   const clearAllPositions = () => {
+    // Tüm localStorage'ı temizle
+    const keysToRemove = [
+      PNL_POSITIONS_STORAGE_KEY,
+      'order-pnl-positions',
+      'order-pnl-positions-v1',
+      'order-pnl-positions-v2'
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`Removed localStorage key: ${key}`);
+    });
+    
+    // State'i sıfırla
     setPnlPositions([]);
-    localStorage.removeItem(PNL_POSITIONS_STORAGE_KEY);
-    localStorage.removeItem('order-pnl-positions');
-    localStorage.removeItem('order-pnl-positions-v1');
+    
+    console.log('All positions cleared, localStorage cleaned');
     
     toast({
       title: 'Tüm Pozisyonlar Temizlendi',
-      description: 'Tüm pozisyonlar ve cache tamamen temizlendi.',
+      description: 'Tüm pozisyonlar ve cache tamamen temizlendi. Sayfa yenilenecek.',
     });
+    
+    // Sayfayı yenile
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Stats calculations
