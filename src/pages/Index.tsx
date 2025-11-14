@@ -202,7 +202,7 @@ const Index = () => {
             <CirculatingSupplyComparison />
             
             {/* Multisig History Chart - Her zaman görünür */}
-            <div className="h-[300px] lg:h-[400px] overflow-hidden relative z-0 flex-shrink-0">
+            <div className="h-[400px] lg:h-[600px] overflow-hidden relative z-0 flex-shrink-0">
               <MultisigHistoryChart />
             </div>
             
