@@ -609,9 +609,18 @@ export const MultisigHistoryChart = () => {
         </div>
       </div>
       
+      {/* Debug Information */}
+      <div className="text-xs text-muted-foreground mb-2 p-2 bg-background/50 rounded">
+        Chart Data Length: {chartData.length} | 
+        Raw History: {rawHistory.length} | 
+        Active Tokens: {activeTokens.length} | 
+        Visible Metrics: {Array.from(visibleMetrics).join(', ')} | 
+        Fullscreen: {isFullscreen ? 'YES' : 'NO'}
+      </div>
+      
       <div className={`flex-1 ${isFullscreen ? 'min-h-[500px]' : 'min-h-0'}`}>
-        <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={chartData}>
+        <ResponsiveContainer width="100%" height="100%" key={`responsive-${isFullscreen}-${chartData.length}-${visibleMetrics.size}`}>
+        <ComposedChart data={chartData} key={`composed-${isFullscreen}-${chartData.length}-${visibleMetrics.size}`} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <defs>
             {activeTokens.map((token, index) => {
               const symbol = token.symbol.toUpperCase();
@@ -640,9 +649,9 @@ export const MultisigHistoryChart = () => {
             height={60}
           />
           <YAxis 
-            scale="log"
-            domain={['auto', 'auto']}
-            allowDataOverflow={false}
+            scale="linear"
+            domain={['dataMin - 0.1', 'dataMax + 0.1']}
+            allowDataOverflow={true}
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
             tickFormatter={(value) => {
@@ -891,7 +900,7 @@ export const MultisigHistoryChart = () => {
       </Card>
 
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
+        <DialogContent key={`dialog-${isFullscreen}-${chartData.length}-${visibleMetrics.size}`} className="max-w-[95vw] max-h-[95vh] min-h-[80vh] overflow-auto p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-corporate-blue" />
@@ -912,6 +921,9 @@ export const MultisigHistoryChart = () => {
           </div>
           
           <div className="flex-1 flex flex-col min-h-0">
+            <div className="text-xs text-muted-foreground mb-2">
+              Fullscreen: {isFullscreen ? 'true' : 'false'} | Data: {chartData.length} points | ActiveTokens: {activeTokens.length} | Visible: {visibleMetrics.size}
+            </div>
             {renderChartContent()}
           </div>
         </DialogContent>
