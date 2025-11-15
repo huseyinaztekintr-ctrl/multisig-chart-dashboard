@@ -55,6 +55,7 @@ export const PnLTracker = () => {
   const [showPnlForm, setShowPnlForm] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [renderKey, setRenderKey] = useState(0); // Force re-render key
+  const [forceUpdate, setForceUpdate] = useState(0); // Nuclear option
 
   // P&L form states
   const [pnlTokenSymbol, setPnlTokenSymbol] = useState('');
@@ -371,31 +372,29 @@ export const PnLTracker = () => {
   };
 
   const closePosition = (positionId: string) => {
-    console.log('=== CLOSE POSITION DEBUG ===');
-    console.log('Attempting to close position with ID:', positionId);
+    // NUCLEAR CLOSE - Kapatma işlemi için
     
-    const updatedPositions = pnlPositions.map(p => 
-      String(p.id) === String(positionId)
-        ? { ...p, status: 'CLOSED' as const, lastUpdated: new Date().toISOString() }
-        : p
-    );
+    setForceUpdate(prev => prev + 1);
     
-    console.log('Close operation completed');
+    setPnlPositions(prev => {
+      const updated = prev.map(p => 
+        String(p.id) === String(positionId)
+          ? { ...p, status: 'CLOSED' as const, lastUpdated: new Date().toISOString() }
+          : p
+      );
+      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
     
-    // Önce localStorage'ı güncelle
-    localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-    
-    // Sonra state'i force update et
-    setPnlPositions([...updatedPositions]);
-    
-    // State'in güncellenmesini garanti etmek için setTimeout kullan
+    // Double check
     setTimeout(() => {
       setPnlPositions(prev => prev.map(p => 
         String(p.id) === String(positionId)
           ? { ...p, status: 'CLOSED' as const, lastUpdated: new Date().toISOString() }
           : p
       ));
-    }, 100);
+      setForceUpdate(prev => prev + 1);
+    }, 50);
 
     const closedPosition = pnlPositions.find(p => String(p.id) === String(positionId));
     if (closedPosition) {
@@ -404,46 +403,47 @@ export const PnLTracker = () => {
         description: `${closedPosition.tokenSymbol} ${closedPosition.positionType} pozisyonu kapatıldı.`,
       });
     }
-    
-    console.log('=== END CLOSE DEBUG ===');
   };
 
   const deletePnlPosition = (id: string) => {
-    // HARDCORE DELETE - İlk pozisyon silme problemi için
+    // NUCLEAR DELETE - İlk pozisyon silme problemi için
     
-    // 1. localStorage'dan tamamen sil
-    const currentData = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
-    if (currentData) {
-      const parsed = JSON.parse(currentData);
-      const filtered = parsed.filter((p: { id: string }) => String(p.id) !== String(id));
-      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(filtered));
-    }
-    
-    // 2. State'i multiple kez güncelle
-    const updatedPositions = pnlPositions.filter(p => String(p.id) !== String(id));
-    
-    // Hemen güncelle
-    setPnlPositions([...updatedPositions]);
-    
-    // Render key'i değiştir (list re-render)
+    // 1. Hemen görsel güncelleme
+    setForceUpdate(prev => prev + 1);
     setRenderKey(prev => prev + 1);
     
-    // 100ms sonra tekrar güncelle
+    // 2. State'i direkt güncelle
+    setPnlPositions(prev => {
+      const newList = prev.filter(p => String(p.id) !== String(id));
+      
+      // localStorage'a da kaydet
+      localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(newList));
+      
+      return newList;
+    });
+    
+    // 3. 50ms sonra double check
     setTimeout(() => {
       setPnlPositions(prev => prev.filter(p => String(p.id) !== String(id)));
-      setRenderKey(prev => prev + 1);
-    }, 100);
+      setForceUpdate(prev => prev + 1);
+    }, 50);
     
-    // 300ms sonra final güncelleme
+    // 4. 150ms sonra triple check
     setTimeout(() => {
-      const finalCheck = JSON.parse(localStorage.getItem(PNL_POSITIONS_STORAGE_KEY) || '[]');
-      setPnlPositions([...finalCheck]);
+      const currentStorage = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+      if (currentStorage) {
+        const parsed = JSON.parse(currentStorage);
+        const cleaned = parsed.filter((p: { id: string }) => String(p.id) !== String(id));
+        localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(cleaned));
+        setPnlPositions([...cleaned]);
+      }
+      setForceUpdate(prev => prev + 1);
       setRenderKey(prev => prev + 1);
-    }, 300);
+    }, 150);
     
     toast({
       title: 'Pozisyon Silindi',
-      description: `Pozisyon başarıyla silindi. Kalan: ${updatedPositions.length} pozisyon.`,
+      description: `Pozisyon zorla silindi!`,
     });
   };
 
@@ -697,7 +697,7 @@ export const PnLTracker = () => {
                   const isProfitable = pnlAmount > 0;
 
                   return (
-                    <Card key={`${position.id}-${renderKey}-${index}`} className="p-4">
+                    <Card key={`nuclear-${position.id}-${renderKey}-${forceUpdate}-${index}-${Date.now()}`} className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         {/* Token Info */}
                         <div className="flex items-center gap-3">
