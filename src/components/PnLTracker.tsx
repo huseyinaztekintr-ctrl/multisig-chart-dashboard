@@ -164,29 +164,46 @@ export const PnLTracker = () => {
 
   // Alarm tetikleme fonksiyonu
   const triggerAlarm = useCallback((position: PnLPosition, targetType: 'takeProfit' | 'stopLoss', currentPrice: number) => {
-    // Alarm sesi çal
+    // Alarm sesi çal (daha uzun ve dikkat çekici)
     if (position.alarmSound) {
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwF');
-      audio.volume = 0.3;
-      audio.play().catch(() => {}); // Ses çalamazsa hata verme
+      // Birden fazla kısa bip sesi
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwFJnjH8N2QQAoUXrTp66hVFApGn+DyvmYdBDWK0/DSfCwF');
+          audio.volume = 0.5;
+          audio.play().catch(() => {}); 
+        }, i * 300);
+      }
     }
 
     const targetPrice = targetType === 'takeProfit' ? position.targets.takeProfit : position.targets.stopLoss;
     const isProfit = (position.positionType === 'LONG' && targetType === 'takeProfit') || 
                      (position.positionType === 'SHORT' && targetType === 'takeProfit');
     
+    // Daha dikkat çekici toast
     toast({
-      title: isProfit ? '🎯 Take Profit Tetiklendi!' : '⚠️ Stop Loss Tetiklendi!',
+      title: isProfit ? '🎉 TAKE PROFIT TETIKKLENDİ!' : '⚠️ STOP LOSS TETIKKLENDİ!',
       description: `${position.tokenSymbol} ${position.positionType} - Hedef: $${formatNumber(targetPrice, 4)} | Mevcut: $${formatNumber(currentPrice, 4)}`,
       variant: isProfit ? 'default' : 'destructive',
+      duration: 8000, // Daha uzun süre
     });
 
-    // Browser notification (eğer izin verilmişse)
+    // Browser notification (önemli bilgilerle)
     if (Notification.permission === 'granted') {
-      new Notification(`${position.tokenSymbol} ${targetType === 'takeProfit' ? 'Take Profit' : 'Stop Loss'}`, {
-        body: `${position.positionType} pozisyonu tetiklendi - $${formatNumber(currentPrice, 4)}`,
-        icon: position.tokenLogo,
-      });
+      const notification = new Notification(
+        `🚨 ${position.tokenSymbol} ${targetType === 'takeProfit' ? 'TAKE PROFIT' : 'STOP LOSS'} ALARM!`, 
+        {
+          body: `${position.positionType} pozisyonu tetiklendi!\nHedef: $${formatNumber(targetPrice, 4)}\nMevcut: $${formatNumber(currentPrice, 4)}`,
+          icon: position.tokenLogo,
+          requireInteraction: true, // Kullanıcı etkileşimine kadar kalacak
+          tag: `alarm-${position.id}` // Aynı pozisyon için tek notification
+        }
+      );
+      
+      // 10 saniye sonra otomatik kapat
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
     }
   }, [toast]);
 
@@ -278,7 +295,18 @@ export const PnLTracker = () => {
   }, [pnlPositions, triggerAlarm, calculatePnL]);
 
   const addPnlPosition = () => {
+    console.log('🔥 addPnlPosition called - Form values:', {
+      tokenSymbol: pnlTokenSymbol,
+      quantity: pnlQuantity,
+      entryPrice: pnlEntryPrice,
+      positionType: pnlPositionType,
+      currentPositions: pnlPositions.length,
+      existingSymbols: pnlPositions.map(p => `${p.tokenSymbol}-${p.positionType}`),
+      timestamp: new Date().toISOString()
+    });
+
     if (!pnlTokenSymbol || !pnlQuantity || !pnlEntryPrice) {
+      console.log('❌ Validation failed - missing fields');
       toast({
         title: 'Hata',
         description: 'Lütfen token, adet ve giriş fiyatı alanlarını doldurun.',
@@ -325,6 +353,7 @@ export const PnLTracker = () => {
 
     const selectedToken = getEnabledTokens().find(t => t.symbol === pnlTokenSymbol);
     if (!selectedToken) {
+      console.log('❌ Token not found:', pnlTokenSymbol, 'Available:', getEnabledTokens().map(t => t.symbol));
       toast({ title: 'Hata', description: 'Seçilen token bulunamadı.', variant: 'destructive' });
       return;
     }
@@ -348,9 +377,24 @@ export const PnLTracker = () => {
       status: 'ACTIVE',
     };
 
+    console.log('✅ Creating new position:', newPosition);
+
     const updatedPositions = [...pnlPositions, newPosition];
+    console.log('✅ Updated positions array:', updatedPositions.length, 'positions');
+    
+    // NUCLEAR UPDATE - Force React to re-render everything
+    setRenderKey(prev => prev + 1);
+    setForceUpdate(prev => prev + 1);
+    
     setPnlPositions(updatedPositions);
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+    console.log('✅ Position saved to localStorage');
+
+    // Trigger additional state update to ensure render
+    setTimeout(() => {
+      setPnlPositions([...updatedPositions]);
+      console.log('✅ Additional state update triggered');
+    }, 100);
 
     // Reset form
     setPnlTokenSymbol('');
@@ -362,6 +406,7 @@ export const PnLTracker = () => {
     setPnlNotes('');
     setPnlAlertsEnabled(true);
     setPnlAlarmSound(true);
+    console.log('✅ Form reset completed');
 
     toast({
       title: `${pnlPositionType} Pozisyon Eklendi! 🎯`,
@@ -519,12 +564,17 @@ export const PnLTracker = () => {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {longPositions > 0 && (
               <Badge variant="outline" className="text-green-500 border-green-500/50">
-                {longPositions} LONG
+                📈 {longPositions} LONG
               </Badge>
             )}
             {shortPositions > 0 && (
               <Badge variant="outline" className="text-red-500 border-red-500/50">
-                {shortPositions} SHORT
+                📉 {shortPositions} SHORT
+              </Badge>
+            )}
+            {alarmTriggeredPositions > 0 && (
+              <Badge variant="outline" className="text-orange-500 border-orange-500/50 animate-pulse">
+                🚨 {alarmTriggeredPositions} ALARM
               </Badge>
             )}
             <span className={totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}>
@@ -651,15 +701,28 @@ export const PnLTracker = () => {
                     />
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-blue-500" />
+                        <Label className="text-sm font-medium">Alarm Bildirimleri</Label>
+                      </div>
                       <Switch checked={pnlAlertsEnabled} onCheckedChange={setPnlAlertsEnabled} />
-                      <Label className="text-sm">Alarmlar</Label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="w-4 h-4 text-purple-500" />
+                        <Label className="text-sm font-medium">Alarm Sesleri</Label>
+                      </div>
                       <Switch checked={pnlAlarmSound} onCheckedChange={setPnlAlarmSound} />
-                      <Label className="text-sm">Ses</Label>
                     </div>
+                    
+                    {pnlAlertsEnabled && (
+                      <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded border-l-4 border-blue-500">
+                        💡 Hedeflerinize ulaşıldığında otomatik bildirim alacaksınız!
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -691,13 +754,14 @@ export const PnLTracker = () => {
                 </Card>
               ) : (
                 pnlPositions.map((position, index) => {
+                  console.log('🎯 Rendering position:', position.tokenSymbol, position.positionType, position.id);
                   const currentPrice = position.currentPrice || 0;
                   const pnlPercentage = position.pnlPercentage || 0;
                   const pnlAmount = position.pnlAmount || 0;
                   const isProfitable = pnlAmount > 0;
 
                   return (
-                    <Card key={`nuclear-${position.id}-${renderKey}-${forceUpdate}-${index}-${Date.now()}`} className="p-4">
+                    <Card key={`ultra-nuclear-${position.id}-${renderKey}-${forceUpdate}-${index}-${Date.now()}-${Math.random()}`} className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         {/* Token Info */}
                         <div className="flex items-center gap-3">
@@ -737,30 +801,55 @@ export const PnLTracker = () => {
 
                         {/* Targets */}
                         <div className="text-center">
-                          <div className="text-sm text-muted-foreground">Hedefler</div>
-                          {position.targets.takeProfit && (
-                            <div className="text-xs text-green-500">TP: ${formatNumber(position.targets.takeProfit, 4)}</div>
-                          )}
-                          {position.targets.stopLoss && (
-                            <div className="text-xs text-red-500">SL: ${formatNumber(position.targets.stopLoss, 4)}</div>
-                          )}
+                          <div className="text-sm text-muted-foreground mb-1">Hedefler</div>
+                          <div className="space-y-1">
+                            {position.targets.takeProfit ? (
+                              <div className="text-xs text-green-500 font-medium">
+                                🎯 TP: ${formatNumber(position.targets.takeProfit, 4)}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-400">TP: Yok</div>
+                            )}
+                            
+                            {position.targets.stopLoss ? (
+                              <div className="text-xs text-red-500 font-medium">
+                                ⛔ SL: ${formatNumber(position.targets.stopLoss, 4)}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-400">SL: Yok</div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Status & Alerts */}
                         <div className="text-center">
-                          <Badge 
-                            variant={position.status === 'ACTIVE' ? 'default' : position.status === 'CLOSED' ? 'secondary' : 'destructive'}
-                            className="mb-1"
-                          >
-                            {position.status}
-                          </Badge>
-                          <div className="flex justify-center gap-1">
-                            {position.alertsEnabled && (
-                              <Bell className="w-3 h-3 text-blue-500" />
-                            )}
-                            {position.alarmSound && (
-                              <Volume2 className="w-3 h-3 text-purple-500" />
-                            )}
+                          <div className="flex flex-col gap-1 items-center">
+                            <Badge 
+                              variant={position.status === 'ACTIVE' ? 'default' : position.status === 'CLOSED' ? 'secondary' : 'destructive'}
+                              className={`text-xs ${
+                                position.status === 'ALARM_TRIGGERED' ? 'bg-red-500/20 text-red-500 border-red-500 animate-pulse' : ''
+                              }`}
+                            >
+                              {position.status === 'ACTIVE' ? 'AKTİF' : 
+                               position.status === 'CLOSED' ? 'KAPALI' : 
+                               position.status === 'ALARM_TRIGGERED' ? '🚨 ALARM' : position.status}
+                            </Badge>
+                            
+                            {/* Alarm İkonları */}
+                            <div className="flex gap-1">
+                              {position.alertsEnabled && (
+                                <div className="flex items-center gap-1">
+                                  <Bell className={`w-3 h-3 ${
+                                    position.status === 'ALARM_TRIGGERED' ? 'text-red-500 animate-bounce' : 'text-blue-500'
+                                  }`} />
+                                  {position.alarmSound && (
+                                    <Volume2 className={`w-3 h-3 ${
+                                      position.status === 'ALARM_TRIGGERED' ? 'text-red-500 animate-bounce' : 'text-purple-500'
+                                    }`} />
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -789,10 +878,26 @@ export const PnLTracker = () => {
                         </div>
                       </div>
 
-                      {/* Notes */}
-                      {position.notes && (
-                        <div className="mt-3 pt-3 border-t text-sm text-muted-foreground">
-                          {position.notes}
+                      {/* Notes & Alarms */}
+                      {(position.notes || position.status === 'ALARM_TRIGGERED') && (
+                        <div className="mt-3 pt-3 border-t">
+                          {position.status === 'ALARM_TRIGGERED' && (
+                            <div className="mb-2 p-2 bg-red-500/10 border border-red-500/30 rounded text-sm">
+                              <div className="flex items-center gap-2 text-red-500 font-medium">
+                                <Bell className="w-4 h-4 animate-bounce" />
+                                🚨 ALARM TETIKKLENDİ!
+                              </div>
+                              <div className="text-xs text-red-400 mt-1">
+                                {position.lastUpdated && new Date(position.lastUpdated).toLocaleString('tr-TR')}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {position.notes && (
+                            <div className="text-sm text-muted-foreground">
+                              <strong>Notlar:</strong> {position.notes}
+                            </div>
+                          )}
                         </div>
                       )}
                     </Card>
