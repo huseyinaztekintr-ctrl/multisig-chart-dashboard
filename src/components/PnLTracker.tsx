@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Plus, Trash2, BarChart3, Target, Eye, RefreshCw, Bell, Volume2, X, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -207,17 +207,25 @@ export const PnLTracker = () => {
     }
   }, [toast]);
 
-  // Enhanced price monitoring with alarm system
+  // Enhanced price monitoring with alarm system - HEAVY CPU OPTIMIZATION
   useEffect(() => {
+    if (pnlPositions.length === 0) return; // Erken çıkış
+    
+    let isComponentMounted = true; // Component unmount kontrolü
+    
     const checkPnlAlerts = async () => {
-      if (pnlPositions.length === 0) return;
+      if (!isComponentMounted || pnlPositions.length === 0) return;
+      
+      // Sadece aktif pozisyonları kontrol et
+      const activePositions = pnlPositions.filter(p => p.status === 'ACTIVE');
+      if (activePositions.length === 0) return;
 
       const updatedPositions = [...pnlPositions];
       let hasUpdates = false;
 
-      for (let i = 0; i < updatedPositions.length; i++) {
-        const position = updatedPositions[i];
-        if (position.status !== 'ACTIVE') continue;
+      for (const position of activePositions) {
+        const positionIndex = updatedPositions.findIndex(p => p.id === position.id);
+        if (positionIndex === -1) continue;
 
         try {
           let tokenPrice = 0;
@@ -239,10 +247,10 @@ export const PnLTracker = () => {
           const pnl = calculatePnL(position, tokenPrice);
 
           // Update current price and P&L
-          updatedPositions[i].currentPrice = tokenPrice;
-          updatedPositions[i].pnlPercentage = pnl.percentage;
-          updatedPositions[i].pnlAmount = pnl.amount;
-          updatedPositions[i].lastUpdated = new Date().toISOString();
+          updatedPositions[positionIndex].currentPrice = tokenPrice;
+          updatedPositions[positionIndex].pnlPercentage = pnl.percentage;
+          updatedPositions[positionIndex].pnlAmount = pnl.amount;
+          updatedPositions[positionIndex].lastUpdated = new Date().toISOString();
           hasUpdates = true;
 
           // Check alarm conditions
@@ -254,8 +262,8 @@ export const PnLTracker = () => {
                 : tokenPrice <= position.targets.takeProfit;
               
               if (tpTriggered) {
-                updatedPositions[i].status = 'ALARM_TRIGGERED';
-                updatedPositions[i].targetReached = true;
+                updatedPositions[positionIndex].status = 'ALARM_TRIGGERED';
+                updatedPositions[positionIndex].targetReached = true;
                 
                 triggerAlarm(position, 'takeProfit', tokenPrice);
                 continue;
@@ -269,11 +277,11 @@ export const PnLTracker = () => {
                 : tokenPrice >= position.targets.stopLoss;
               
               if (slTriggered) {
-                updatedPositions[i].status = 'ALARM_TRIGGERED';
-                updatedPositions[i].targetReached = true;
+                updatedPositions[positionIndex].status = 'ALARM_TRIGGERED';
+                updatedPositions[positionIndex].targetReached = true;
                 
                 triggerAlarm(position, 'stopLoss', tokenPrice);
-                continue;
+                break;
               }
             }
           }
@@ -282,31 +290,24 @@ export const PnLTracker = () => {
         }
       }
 
+      // Sadece gerçekten değişiklik varsa state güncelle (CPU optimizasyonu)
       if (hasUpdates) {
         setPnlPositions(updatedPositions);
         localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
       }
     };
 
-    const interval = setInterval(checkPnlAlerts, 10000); // Check every 10 seconds
+    const interval = setInterval(checkPnlAlerts, 30000); // 30 saniye - ağır CPU optimizasyonu
     checkPnlAlerts(); // Initial check
 
-    return () => clearInterval(interval);
+    return () => {
+      isComponentMounted = false;
+      clearInterval(interval);
+    };
   }, [pnlPositions, triggerAlarm, calculatePnL]);
 
   const addPnlPosition = () => {
-    console.log('🔥 addPnlPosition called - Form values:', {
-      tokenSymbol: pnlTokenSymbol,
-      quantity: pnlQuantity,
-      entryPrice: pnlEntryPrice,
-      positionType: pnlPositionType,
-      currentPositions: pnlPositions.length,
-      existingSymbols: pnlPositions.map(p => `${p.tokenSymbol}-${p.positionType}`),
-      timestamp: new Date().toISOString()
-    });
-
     if (!pnlTokenSymbol || !pnlQuantity || !pnlEntryPrice) {
-      console.log('❌ Validation failed - missing fields');
       toast({
         title: 'Hata',
         description: 'Lütfen token, adet ve giriş fiyatı alanlarını doldurun.',
@@ -353,7 +354,6 @@ export const PnLTracker = () => {
 
     const selectedToken = getEnabledTokens().find(t => t.symbol === pnlTokenSymbol);
     if (!selectedToken) {
-      console.log('❌ Token not found:', pnlTokenSymbol, 'Available:', getEnabledTokens().map(t => t.symbol));
       toast({ title: 'Hata', description: 'Seçilen token bulunamadı.', variant: 'destructive' });
       return;
     }
@@ -377,24 +377,12 @@ export const PnLTracker = () => {
       status: 'ACTIVE',
     };
 
-    console.log('✅ Creating new position:', newPosition);
-
     const updatedPositions = [...pnlPositions, newPosition];
-    console.log('✅ Updated positions array:', updatedPositions.length, 'positions');
     
-    // NUCLEAR UPDATE - Force React to re-render everything
+    // Optimized update - sadece gerekli state güncellemeleri
     setRenderKey(prev => prev + 1);
-    setForceUpdate(prev => prev + 1);
-    
     setPnlPositions(updatedPositions);
     localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
-    console.log('✅ Position saved to localStorage');
-
-    // Trigger additional state update to ensure render
-    setTimeout(() => {
-      setPnlPositions([...updatedPositions]);
-      console.log('✅ Additional state update triggered');
-    }, 100);
 
     // Reset form
     setPnlTokenSymbol('');
@@ -402,11 +390,6 @@ export const PnLTracker = () => {
     setPnlEntryPrice('');
     setPnlPositionType('LONG');
     setPnlTakeProfit('');
-    setPnlStopLoss('');
-    setPnlNotes('');
-    setPnlAlertsEnabled(true);
-    setPnlAlarmSound(true);
-    console.log('✅ Form reset completed');
 
     toast({
       title: `${pnlPositionType} Pozisyon Eklendi! 🎯`,
@@ -531,18 +514,40 @@ export const PnLTracker = () => {
     }, 1000);
   };
 
-  // Stats calculations
+  // Memoized stats calculations - CPU optimizasyonu
   const totalPositions = pnlPositions.length;
-  const activePositions = pnlPositions.filter(p => p.status === 'ACTIVE').length;
-  const closedPositions = pnlPositions.filter(p => p.status === 'CLOSED').length;
-  const alarmTriggeredPositions = pnlPositions.filter(p => p.status === 'ALARM_TRIGGERED').length;
   
-  const totalPnL = pnlPositions
-    .filter(p => p.pnlAmount !== undefined)
-    .reduce((sum, p) => sum + (p.pnlAmount || 0), 0);
+  const activePositions = useMemo(() => 
+    pnlPositions.filter(p => p.status === 'ACTIVE').length, 
+    [pnlPositions]
+  );
+  
+  const closedPositions = useMemo(() =>
+    pnlPositions.filter(p => p.status === 'CLOSED').length,
+    [pnlPositions]
+  );
+  
+  const alarmTriggeredPositions = useMemo(() =>
+    pnlPositions.filter(p => p.status === 'ALARM_TRIGGERED').length,
+    [pnlPositions]
+  );
+  
+  const totalPnL = useMemo(() =>
+    pnlPositions
+      .filter(p => p.pnlAmount !== undefined)
+      .reduce((sum, p) => sum + (p.pnlAmount || 0), 0),
+    [pnlPositions]
+  );
 
-  const longPositions = pnlPositions.filter(p => p.positionType === 'LONG' && p.status === 'ACTIVE').length;
-  const shortPositions = pnlPositions.filter(p => p.positionType === 'SHORT' && p.status === 'ACTIVE').length;
+  const longPositions = useMemo(() =>
+    pnlPositions.filter(p => p.positionType === 'LONG' && p.status === 'ACTIVE').length,
+    [pnlPositions]
+  );
+  
+  const shortPositions = useMemo(() =>
+    pnlPositions.filter(p => p.positionType === 'SHORT' && p.status === 'ACTIVE').length,
+    [pnlPositions]
+  );
 
   return (
     <>
@@ -754,14 +759,13 @@ export const PnLTracker = () => {
                 </Card>
               ) : (
                 pnlPositions.map((position, index) => {
-                  console.log('🎯 Rendering position:', position.tokenSymbol, position.positionType, position.id);
                   const currentPrice = position.currentPrice || 0;
                   const pnlPercentage = position.pnlPercentage || 0;
                   const pnlAmount = position.pnlAmount || 0;
                   const isProfitable = pnlAmount > 0;
 
                   return (
-                    <Card key={`ultra-nuclear-${position.id}-${renderKey}-${forceUpdate}-${index}-${Date.now()}-${Math.random()}`} className="p-4">
+                    <Card key={`pos-${position.id}-${renderKey}`} className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                         {/* Token Info */}
                         <div className="flex items-center gap-3">
