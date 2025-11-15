@@ -56,6 +56,7 @@ export const PnLTracker = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [renderKey, setRenderKey] = useState(0); // Force re-render key
   const [forceUpdate, setForceUpdate] = useState(0); // Nuclear option
+  const [isUpdating, setIsUpdating] = useState(false); // Manual update state
 
   // P&L form states
   const [pnlTokenSymbol, setPnlTokenSymbol] = useState('');
@@ -207,21 +208,134 @@ export const PnLTracker = () => {
     }
   }, [toast]);
 
-  // Enhanced price monitoring with alarm system - HEAVY CPU OPTIMIZATION
+  // Safe automatic price monitoring - 1 dakikada bir
   useEffect(() => {
-    if (pnlPositions.length === 0) return; // Erken çıkış
+    let isComponentMounted = true;
     
-    let isComponentMounted = true; // Component unmount kontrolü
+    const safeCheckPrices = async () => {
+      if (!isComponentMounted) return;
+      
+      try {
+        // localStorage'dan direkt oku - state dependency yok
+        const storedPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+        if (!storedPositions) return;
+        
+        const positions = JSON.parse(storedPositions);
+        const activePositions = positions.filter(p => p.status === 'ACTIVE');
+        if (activePositions.length === 0) return;
+
+        let hasUpdates = false;
+        const updatedPositions = [...positions];
+
+        for (const position of activePositions) {
+          const positionIndex = updatedPositions.findIndex(p => p.id === position.id);
+          if (positionIndex === -1) continue;
+
+          try {
+            let tokenPrice = 0;
+            
+            if (position.tokenSymbol === 'BTC.b') {
+              const btcPairAddress = '0x856b38Bf1e2E367F747DD4d3951DDA8a35F1bF60';
+              const btcPriceData = await fetchDexScreenerPrice(btcPairAddress);
+              tokenPrice = btcPriceData.price;
+            } else if (position.tokenSymbol === 'USDC' || position.tokenSymbol === 'DAI.e' || position.tokenSymbol === 'GHO') {
+              tokenPrice = 1;
+            } else if (position.tokenPairAddress) {
+              const priceData = await fetchDexScreenerPrice(position.tokenPairAddress);
+              tokenPrice = priceData.price;
+            }
+            
+            if (tokenPrice === 0) continue;
+
+            // Calculate P&L
+            const pnl = calculatePnL(position, tokenPrice);
+
+            // Update current price and P&L
+            updatedPositions[positionIndex].currentPrice = tokenPrice;
+            updatedPositions[positionIndex].pnlPercentage = pnl.percentage;
+            updatedPositions[positionIndex].pnlAmount = pnl.amount;
+            updatedPositions[positionIndex].lastUpdated = new Date().toISOString();
+            hasUpdates = true;
+
+            // Check alarm conditions
+            if (position.alertsEnabled && !position.targetReached) {
+              // Take Profit check
+              if (position.targets.takeProfit) {
+                const tpTriggered = position.positionType === 'LONG' 
+                  ? tokenPrice >= position.targets.takeProfit
+                  : tokenPrice <= position.targets.takeProfit;
+                
+                if (tpTriggered) {
+                  updatedPositions[positionIndex].status = 'ALARM_TRIGGERED';
+                  updatedPositions[positionIndex].targetReached = true;
+                  
+                  triggerAlarm(position, 'takeProfit', tokenPrice);
+                  continue;
+                }
+              }
+
+              // Stop Loss check
+              if (position.targets.stopLoss) {
+                const slTriggered = position.positionType === 'LONG'
+                  ? tokenPrice <= position.targets.stopLoss
+                  : tokenPrice >= position.targets.stopLoss;
+                
+                if (slTriggered) {
+                  updatedPositions[positionIndex].status = 'ALARM_TRIGGERED';
+                  updatedPositions[positionIndex].targetReached = true;
+                  
+                  triggerAlarm(position, 'stopLoss', tokenPrice);
+                  break;
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Price update error for ${position.tokenSymbol}:`, error);
+          }
+        }
+
+        // Sadece değişiklik varsa güncelle
+        if (hasUpdates && isComponentMounted) {
+          setPnlPositions(updatedPositions);
+          localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+        }
+      } catch (error) {
+        console.error('Safe price monitoring error:', error);
+      }
+    };
+
+    // İlk güncelleme
+    setTimeout(safeCheckPrices, 2000); // 2 saniye sonra başla
+    
+    // 1 dakikada bir tekrarla
+    const intervalId = setInterval(safeCheckPrices, 60000); // 60 saniye
+
+    return () => {
+      isComponentMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [calculatePnL, triggerAlarm]); // Stable callbacks
+
+  // TEMPORARILY DISABLED - Price monitoring causing CPU overload
+  /*
+  useEffect(() => {
+    let isComponentMounted = true;
     
     const checkPnlAlerts = async () => {
-      if (!isComponentMounted || pnlPositions.length === 0) return;
-      
-      // Sadece aktif pozisyonları kontrol et
-      const activePositions = pnlPositions.filter(p => p.status === 'ACTIVE');
-      if (activePositions.length === 0) return;
+      try {
+        if (!isComponentMounted) return;
+        
+        // CRITICAL: localStorage'dan direkt oku - state dependency yok
+        const storedPositions = localStorage.getItem(PNL_POSITIONS_STORAGE_KEY);
+        if (!storedPositions) return;
+        
+        const positions = JSON.parse(storedPositions);
+        const activePositions = positions.filter(p => p.status === 'ACTIVE');
+        if (activePositions.length === 0) return;
 
-      const updatedPositions = [...pnlPositions];
-      let hasUpdates = false;
+        // Minimal update - sadece gerekirse
+        let hasUpdates = false;
+        const updatedPositions = [...positions];
 
       for (const position of activePositions) {
         const positionIndex = updatedPositions.findIndex(p => p.id === position.id);
@@ -290,21 +404,65 @@ export const PnLTracker = () => {
         }
       }
 
-      // Sadece gerçekten değişiklik varsa state güncelle (CPU optimizasyonu)
-      if (hasUpdates) {
-        setPnlPositions(updatedPositions);
-        localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+        // Sadece gerçekten değişiklik varsa state güncelle (CPU optimizasyonu)
+        if (hasUpdates) {
+          setPnlPositions(updatedPositions);
+          localStorage.setItem(PNL_POSITIONS_STORAGE_KEY, JSON.stringify(updatedPositions));
+        }
+      } catch (error) {
+        console.error('PnL monitoring error:', error);
       }
     };
 
-    const interval = setInterval(checkPnlAlerts, 30000); // 30 saniye - ağır CPU optimizasyonu
-    checkPnlAlerts(); // Initial check
+    const interval = setInterval(checkPnlAlerts, 60000); // 60 saniye - EMERGENCY CPU fix
+    // checkPnlAlerts(); // Initial check devre dışı - CPU overload engellemek için
 
     return () => {
       isComponentMounted = false;
       clearInterval(interval);
     };
-  }, [pnlPositions, triggerAlarm, calculatePnL]);
+  }, []); // EMERGENCY FIX: Boş dependency - infinite loop engellemek için
+  */
+
+  // Manual price update function (CPU safe)
+  const manualPriceUpdate = async () => {
+    if (pnlPositions.length === 0) return;
+    
+    setIsUpdating(true);
+    const activePositions = pnlPositions.filter(p => p.status === 'ACTIVE');
+    
+    for (const position of activePositions) {
+      try {
+        let tokenPrice = 0;
+        
+        if (position.tokenSymbol === 'BTC.b') {
+          const btcPairAddress = '0x856b38Bf1e2E367F747DD4d3951DDA8a35F1bF60';
+          const btcPriceData = await fetchDexScreenerPrice(btcPairAddress);
+          tokenPrice = btcPriceData.price;
+        } else if (position.tokenSymbol === 'USDC' || position.tokenSymbol === 'DAI.e' || position.tokenSymbol === 'GHO') {
+          tokenPrice = 1;
+        } else if (position.tokenPairAddress) {
+          const priceData = await fetchDexScreenerPrice(position.tokenPairAddress);
+          tokenPrice = priceData.price;
+        }
+        
+        if (tokenPrice > 0) {
+          const pnl = calculatePnL(position, tokenPrice);
+          
+          setPnlPositions(prev => prev.map(p => 
+            p.id === position.id 
+              ? { ...p, currentPrice: tokenPrice, pnlAmount: pnl.amount, pnlPercentage: pnl.percentage, lastUpdated: new Date().toISOString() }
+              : p
+          ));
+        }
+      } catch (error) {
+        console.error('Manual price update error:', error);
+      }
+    }
+    
+    setIsUpdating(false);
+    toast({ title: 'Fiyatlar güncellendi! 📈', description: `${activePositions.length} pozisyon güncellendi.` });
+  };
 
   const addPnlPosition = () => {
     if (!pnlTokenSymbol || !pnlQuantity || !pnlEntryPrice) {
@@ -598,6 +756,9 @@ export const PnLTracker = () => {
               <BarChart3 className="w-5 h-5 text-order-green" />
               Long/Short P&L Tracker
               <Badge variant="secondary">{totalPositions} Pozisyon</Badge>
+              <Badge variant="outline" className="text-xs text-green-600 border-green-500/50">
+                🔄 Auto 1dk
+              </Badge>
             </DialogTitle>
           </DialogHeader>
 
@@ -621,6 +782,15 @@ export const PnLTracker = () => {
                 >
                   <Trash2 className="w-4 h-4" />
                   Tümünü Sil
+                </Button>
+                <Button 
+                  onClick={manualPriceUpdate} 
+                  disabled={isUpdating}
+                  variant="outline"
+                  className="gap-2 border-green-500/50 text-green-500 hover:bg-green-500/10"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} />
+                  {isUpdating ? 'Güncelleniyor...' : 'Manuel Güncelle'}
                 </Button>
                 <Button onClick={() => setShowPnlForm(!showPnlForm)} className="gap-2">
                   <Plus className="w-4 h-4" />

@@ -132,7 +132,7 @@ export const TokenTicker = ({ name, symbol, logo, coingeckoId, pairAddress }: To
 
   useEffect(() => {
     fetchTokenData();
-    const interval = setInterval(fetchTokenData, 300000); // Every 5 minutes (CPU optimizasyonu için)
+    const interval = setInterval(fetchTokenData, 600000); // 10 dakika - ağır CPU optimizasyonu
     return () => clearInterval(interval);
   }, [coingeckoId, pairAddress]);
 

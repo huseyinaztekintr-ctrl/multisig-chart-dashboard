@@ -83,7 +83,7 @@ const AAVEIncomeDistributionComponent = () => {
     window.addEventListener('storage', handleStorageUpdate);
     
     // Check for updates periodically
-    const interval = setInterval(updateValues, 30000); // 30 saniyede bir güncelle (CPU optimizasyonu)
+    const interval = setInterval(updateValues, 60000); // 1 dakika - CPU optimizasyonu
     
     return () => {
       window.removeEventListener('comparative-analysis-updated', handleUpdate);
